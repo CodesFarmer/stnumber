@@ -8,20 +8,29 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <fstream>
+#include <ctime>
+#include <sstream>
+
+#include "filepath.h"
+#include "geometry_tools.h"
 
 class GeneratePatch{
 public:
-    void generatePatches(std::string,
-                         int num_negative = 50,//How much negative samples we cropping from image
-                         int num_positive = 25,//Similar to above
-                         float neg_IOU = 0.3f,//The threshold we justify a region is a negative samples
-                         float part_IOU = 0.4f,//Similar to above
-                         float pos_IOU = 0.65f);//Similar to above
+    GeneratePatch(int num_neg = 50, int num_pos = 25, float neg_iou = 0.3f, float prt_iou = 0.4f, float pos_iou = 0.65f):
+            num_negative_(num_neg), num_positive_(num_pos), neg_IOU_(neg_iou), part_IOU_(prt_iou), pos_IOU_(pos_iou){};
+    void generatePatches(std::string filename,
+                         std::string dst_path);//Similar to above
 private:
-    //calculate the ratio of overlap region
-    float regionsIOU(cv::Rect & r1, cv::Rect &r2);
-    void saveImages();
-    void cropImages(std::string img_path, cv::Rect &ojb_bbx, float, float, float);
+//    void saveImages(){};
+    void createPathces(std::string, std::vector<cv::Rect> &, std::string);
+    void createNegativeSamples(cv::Mat &, std::vector<cv::Rect> &, std::string);
+    void createPositiveSamples(cv::Mat &, std::vector<cv::Rect> &, std::string, std::string);
+private:
+    int num_negative_;//How much negative samples we cropping from image
+    int num_positive_;//Similar to above
+    float neg_IOU_;//The threshold we justify a region is a negative samples
+    float part_IOU_;//Similar to above
+    float pos_IOU_;//Similar to above
 };
 
 
