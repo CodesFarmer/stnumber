@@ -1,0 +1,5 @@
+find_path(TinyXML2_INCLUDE_DIR "tinyxml2.h")
+find_library(TinyXML2_LIBRARY_DIR "tinyxml2")
+
+list(APPEND DEST_LINK_TARGETS ${TinyXML2_LIBRARY_DIR})
+list(APPEND ALL_INCLUDE_DIR ${TinyXML2_INCLUDE_DIR})

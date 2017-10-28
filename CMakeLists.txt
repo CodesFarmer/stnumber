@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 include(cmake/ConfigureOpenCV.cmake)
 include(cmake/ConfigureCaffe.cmake)
+include(cmake/ConfigureTinyxml2.cmake)
 
 file(GLOB header_dir
         "include/*")
