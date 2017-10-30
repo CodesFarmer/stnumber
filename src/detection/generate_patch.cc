@@ -54,7 +54,7 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
 }
 
 void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &ojb_bbxes, int img_size, std::string dest_path) {
-    cv::Mat image = cv::imread(img_path);
+    cv::Mat image = cv::imread(img_path, CV_8UC1);
     if(image.empty()) return;
     //get the details of file path
     std::string file_path;
