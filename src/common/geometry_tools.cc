@@ -1,7 +1,7 @@
 #include "geometry_tools.h"
 
-namespace GEOMETRYTOOLS{
-    float regionsIOU(std::vector<cv::Rect>& rects, cv::Rect the_rect) {
+namespace GEOMETRYTOOLS {
+    float regionsIOU(std::vector<cv::Rect>& rects, cv::Rect &the_rect) {
         float max_iou = 0.0f;
         for(size_t iter = 0; iter < rects.size(); iter++) {
             float iou = regionIOU(rects[iter], the_rect);

@@ -8,20 +8,25 @@ file(GLOB header_dir
         "include/*")
 include_directories(${header_dir})
 
-file(GLOB dependencies_header
-        "include/detection/*.h"
+file(GLOB ctools_header
         "include/common/*.h"
+        "include/detection/*.h"
         "include/cnnetwork/*.h")
-file(GLOB dependencies_source
-        "src/detection/*.cc"
-        "src/common/*.cc")
+file(GLOB ctools_source
+        "src/common/*.cc"
+        "src/detection/*.cc")
 
-add_library(plibrary
-        ${dependencies_header}
-        ${dependencies_source}
-)
+add_library(ctools
+        ${ctools_header}
+        ${ctools_source}
+        )
+target_link_libraries(ctools ${DEST_LINK_TARGETS})
 
-add_executable(printtest test/test.cc)
-add_executable(cnntest test/test_cnn.cc)
-target_link_libraries(printtest plibrary ${DEST_LINK_TARGETS})
-target_link_libraries(cnntest plibrary ${DEST_LINK_TARGETS})
+add_executable(printtest test/test_fp.cc)
+add_executable(xmltest test/test_xml.cc)
+add_executable(pathtest test/test_patch.cc)
+add_executable(patchtest test/test_patch.cc)
+target_link_libraries(printtest ${DEST_LINK_TARGETS} ctools)
+target_link_libraries(xmltest ${DEST_LINK_TARGETS} ctools)
+target_link_libraries(pathtest ${DEST_LINK_TARGETS} ctools)
+target_link_libraries(patchtest ${DEST_LINK_TARGETS} ctools)

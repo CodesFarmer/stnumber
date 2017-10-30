@@ -8,6 +8,6 @@
 #include <opencv2/opencv.hpp>
 #include <tinyxml2.h>
 
-std::vector<cv::Rect> get_boundingboxes(std::string);
+std::vector<cv::Rect> get_bounding_boxes(std::string);
 
 #endif //PROJECT_READXML_CT_H
