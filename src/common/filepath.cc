@@ -22,4 +22,13 @@ namespace FILEPARTS {
         }
         return true;
     }
+    int counting_lines(std::string filename) {
+        std::ifstream input_fid;
+        input_fid.open(filename.c_str(), std::ios::in|std::ios::binary);
+        int num_lines = 0;
+        std::string lines;
+        while(std::getline(input_fid, lines))
+            num_lines++;
+        return num_lines;
+    }
 }

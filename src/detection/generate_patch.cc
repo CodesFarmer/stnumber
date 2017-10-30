@@ -1,6 +1,7 @@
 #include "generate_patch.h"
 
 void GeneratePatch::generate_patches(std::string filename, int img_size, std::string dst_path) {
+    int length = FILEPARTS::counting_lines(filename);
     std::ifstream input_fid;
     input_fid.open(filename.c_str(), std::ios::in);
     std::system(std::string("mkdir -p " + dst_path + "/negative/").c_str());
@@ -14,6 +15,7 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
     std::string img_name;
     std::string img_path;
     std::vector<cv::Rect> bounding_boxes;
+    int cur_iter = 0;
     while(!input_fid.eof()) {
         input_fid>>file_path;
         input_fid>>img_name;
@@ -21,7 +23,10 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
         img_path = file_path + "/cam0/" + img_name + ".png";
 
         create_patches(img_path, bounding_boxes, img_size, dst_path);
+        std::cout<<"\r"<<std::setprecision(4)<<100*float(cur_iter)/float(length)<<"% completed..."<<std::flush;
+        cur_iter++;
     }
+    std::cout<<std::endl;
     negative_fid_.close();
     positive_fid_.close();
     part_fid_.close();

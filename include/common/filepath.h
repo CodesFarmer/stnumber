@@ -14,9 +14,11 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 namespace FILEPARTS{
     bool fileparts(std::string, std::string &, std::string &, std::string&);
+    int counting_lines(std::string);
 }
 
 #endif //PROJECT_FILEPATH_H
