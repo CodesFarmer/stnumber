@@ -8,9 +8,11 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <fstream>
-#include <ctime>
+#include <sys/time.h>
 #include <sstream>
 #include <iomanip>
+#include <unistd.h>
+#include <ctime>
 
 #include "filepath.h"
 #include "readxml_ct.h"

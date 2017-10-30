@@ -19,11 +19,14 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
     while(!input_fid.eof()) {
         input_fid>>file_path;
         input_fid>>img_name;
-        bounding_boxes = get_bounding_boxes(file_path + "/anno/" + img_name + ".xml");
+        bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
         img_path = file_path + "/cam0/" + img_name + ".png";
 
-        create_patches(img_path, bounding_boxes, img_size, dst_path);
-        std::cout<<"\r"<<std::setprecision(4)<<100*float(cur_iter)/float(length)<<"% completed..."<<std::flush;
+        if(bounding_boxes.size() > 0) {
+            create_patches(img_path, bounding_boxes, img_size, dst_path);
+        }
+        std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
+                  << std::flush;
         cur_iter++;
     }
     std::cout<<std::endl;
@@ -85,6 +88,7 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
         int y1 = obj_bbxes[iter].y;
         int width = obj_bbxes[iter].width;
         int height = obj_bbxes[iter].height;
+        if(obj_bbxes[iter].width <= 5 || obj_bbxes[iter].height <= 5) continue;
         if(x1 < 0 || y1 < 0) continue;
         if(std::max(width, height) < 20 ) continue;
         //set teh w and h
@@ -94,10 +98,16 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
         int posi_num = 0;
         int jter = 0;
 //        for(int jter = 0;jter < num_positive_;jter++) {
+        struct timeval formertime;
+        struct timeval curtime;
+        gettimeofday(&formertime, NULL);
         while(jter < num_positive_) {
+            gettimeofday(&curtime, NULL);
+            double time_cost = (curtime.tv_sec - formertime.tv_sec) + (curtime.tv_usec - formertime.tv_usec)/1000000.0;
+            if(time_cost > 2.0) break;
             int patch_size = rand()%(max_size - min_size) + min_size;
-            int delta_x = int(rand()%(int(width*0.2)) - 0.1*width);
-            int delta_y = int(rand()%(int(height*0.2)) - 0.1*height);
+            int delta_x = int(rand()%(int(width*0.4)) - 0.2*width);
+            int delta_y = int(rand()%(int(height*0.4)) - 0.2*height);
             int x_l = std::max(0, x1  + width/2 - delta_x - patch_size/2);
             int y_l = std::max(0, y1 + height/2 - delta_y - patch_size/2);
             int x_r = std::min(x_l + patch_size, img.cols - 1);//cols [0,224]
