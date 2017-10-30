@@ -7,9 +7,26 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
     std::system(std::string("mkdir -p " + dst_path + "/negative/").c_str());
     std::system(std::string("mkdir -p " + dst_path + "/positive/").c_str());
     std::system(std::string("mkdir -p " + dst_path + "/part/").c_str());
-    negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary);
-    positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary);
-    part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary);
+
+    //create file lists
+    if(access(std::string(dst_path + "/negative.txt").c_str(), F_OK) == -1){
+        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary);
+    }
+    else {
+        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+    }
+    if(access(std::string(dst_path + "/positive.txt").c_str(), F_OK) == -1){
+        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary);
+    }
+    else {
+        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+    }
+    if(access(std::string(dst_path + "/part.txt").c_str(), F_OK) == -1){
+        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary);
+    }
+    else {
+        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+    }
 
     std::string file_path;
     std::string img_name;
@@ -21,6 +38,7 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
         input_fid>>img_name;
         bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
         img_path = file_path + "/cam0/" + img_name + ".png";
+        part_fid_<<img_path<<"\n";
 
         if(bounding_boxes.size() > 0) {
             create_patches(img_path, bounding_boxes, img_size, dst_path);
@@ -37,6 +55,7 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
 
 void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &ojb_bbxes, int img_size, std::string dest_path) {
     cv::Mat image = cv::imread(img_path);
+    if(image.empty()) return;
     //get the details of file path
     std::string file_path;
     std::string file_name;
@@ -126,7 +145,7 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
             float offset_x1 = (obj_bbxes[iter].x - x_l)/float(patch_size);
             float offset_x2 = (obj_bbxes[iter].y - y_l)/float(patch_size);
             float offset_y1 = (obj_bbxes[iter].x + width - x_r)/float(patch_size);
-            float offset_y2 = (obj_bbxes[iter].x + height - y_r)/float(patch_size);
+            float offset_y2 = (obj_bbxes[iter].y + height - y_r)/float(patch_size);
             if(patch_iou >= pos_IOU_) {
                 char name_suffix[32];
                 std::sprintf(name_suffix, "_%03d.png", posi_num);
