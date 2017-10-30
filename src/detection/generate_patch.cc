@@ -38,7 +38,6 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
         input_fid>>img_name;
         bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
         img_path = file_path + "/cam0/" + img_name + ".png";
-        part_fid_<<img_path<<"\n";
 
         if(bounding_boxes.size() > 0) {
             create_patches(img_path, bounding_boxes, img_size, dst_path);
