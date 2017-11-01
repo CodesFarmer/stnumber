@@ -10,8 +10,8 @@
 #include "H5Cpp.h"
 
 namespace CTHDF5 {
-    void create_hdf5(std::string, std::vector<std::string>);
-    void write2hdf5();
+//    void create_hdf5(std::string, std::vector<std::string>);
+//    void write2hdf5();
 }
 
 #endif //PROJECT_HDF5_CT_H
