@@ -17,10 +17,10 @@ int main(int argc, char *argv[]) {
     std::string models_dir = "../data/model/";
     modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
     modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
+    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
     std::vector<float> mean_value(1, 17.2196);
     float img2net_scale = 0.0125;
     generator->initialize_detector(modelpath, img2net_scale, mean_value);
-    std::printf("TSTESTSTSDSTSTS\n");
     generator->generate_patches_cnn(file_lists, 48, dest_path);
 
     return 0;

@@ -14,6 +14,7 @@ int main(int argc, char * argv[]) {
     std::string models_dir = "../data/model/";
     modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
     modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
+    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
     std::vector<float> mean_value(1, 17.2196);
     float img2net_scale = 0.0125;
     FaceDetector<float>* detector = new FaceDetector<float>();

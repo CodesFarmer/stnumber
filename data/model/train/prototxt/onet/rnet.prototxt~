@@ -1,5 +1,5 @@
-#ONet
-#dim 48, dim 48
+#RNet
+#dim 24, dim 24
 layer {
   top: "data"
   top: "label"
@@ -9,8 +9,8 @@ layer {
     phase: TRAIN
   }
   hdf5_data_param {
-    source: "data/train_onet.txt"
-    batch_size: 128
+    source: "data/train_rnet.txt"
+    batch_size: 256
     shuffle: true
   }
 }
@@ -24,7 +24,7 @@ layer {
     phase: TEST
   }
   hdf5_data_param {
-    source: "data/test_onet.txt"
+    source: "data/test_rnet.txt"
     batch_size: 2048
     shuffle: true
   }
@@ -48,7 +48,7 @@ layer{
   name: "conv1"
   type: "Convolution"
   convolution_param {
-    num_output: 32
+    num_output: 28
     kernel_size: 3
     stride: 1
     weight_filler {
@@ -57,7 +57,7 @@ layer{
     }
     bias_filler {
       type: "constant"
-      value: 0.1
+      value: 0
     }
   }
   param {
@@ -95,7 +95,7 @@ layer {
   name: "conv2"
   type: "Convolution"
   convolution_param {
-    num_output: 64
+    num_output: 48
     kernel_size: 3
     stride: 1
     weight_filler {
@@ -104,7 +104,7 @@ layer {
     }
     bias_filler {
       type: "constant"
-      value: 0.1
+      value: 0
     }
   }
   param {
@@ -143,7 +143,7 @@ layer {
   type: "Convolution"
   convolution_param {
     num_output: 64
-    kernel_size: 3
+    kernel_size: 2
     stride: 1
     weight_filler {
       type: "gaussian"
@@ -151,7 +151,7 @@ layer {
     }
     bias_filler {
       type: "constant"
-      value: 0.1
+      value: 0
     }
   }
   param {
@@ -173,69 +173,22 @@ layer {
 
 layer {
   bottom: "conv3"
-  top: "pool3"
-  type: "Pooling"
-  name: "pool3"
-  pooling_param {
-	pool: MAX
-    kernel_size: 2
-    stride: 2
-  }
-}
-
-layer {
-  bottom: "pool3"
-  top: "conv4"
-  type: "Convolution"
-  name: "conv4"
-  convolution_param {
-	num_output: 128
-	kernel_size: 2
-	stride: 1
-	weight_filler {
-	  type: "gaussian"
-	  std: 0.01
-	}
-	bias_filler {
-	  type: "constant"
-	  value: 0.1
-	}
-  }
-  param {
-	lr_mult: 1
-	decay_mult: 1
-  }
-  param {
-	lr_mult: 2
-	decay_mult: 0
-  }
-}
-
-layer {
-  bottom: "conv4"
-  top: "conv4"
-  name: "prelu4"
-  type: "PReLU"
-}
-
-layer {
-  bottom: "conv4"
   top: "fc1"
   type: "InnerProduct"
   name: "fc1"
   inner_product_param {
-	num_output: 256
-	weight_filler {
+    num_output: 128
+    weight_filler {
 	  type: "gaussian"
 	  std: 0.01
 	}
 	bias_filler {
 	  type: "constant"
-	  value: 0.1
+	  value: 0.0
 	}
   }
   param {
-	lr_mult: 1
+    lr_mult: 1
 	decay_mult: 1
   }
   param {
@@ -247,8 +200,18 @@ layer {
 layer {
   bottom: "fc1"
   top: "fc1"
-  name: "prelu5"
   type: "PReLU"
+  name: "prelu4"
+}
+
+layer {
+  bottom: "fc1"
+  top: "fc1"
+  type: "Dropout"
+  name: "drop1"
+  dropout_param{
+	dropout_ratio: 0.5
+  }
 }
 
 layer {
@@ -264,11 +227,11 @@ layer {
 	}
 	bias_filler {
 	  type: "constant"
-	  value: 0.1
+	  value: 0
 	}
   }
   param {
-	lr_mult: 1
+    lr_mult: 1
 	decay_mult: 1
   }
   param {
@@ -291,11 +254,11 @@ layer {
 	}
 	bias_filler {
 	  type: "constant"
-	  value: 0.1
+	  value: 0
 	}
   }
   param {
-	lr_mult: 1
+    lr_mult: 1
 	decay_mult: 1
   }
   param {
@@ -322,7 +285,7 @@ layer {
   top: "roi_loss"
   name: "roi_loss"
   type: "EuclideanLoss"
-  loss_weight: 0.0
+  loss_weight: 0.5
   loss_param {
     ignore_label: 0
   }

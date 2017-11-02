@@ -65,17 +65,17 @@ public:
 			std::cerr<<"Fatal error wihile initializing network RNet..."<<std::endl;
 			return -1;
 		}
-//		//ONet
-//		try{
-//			boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL));
-//			// boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL, NULL));
-//			ONet_ = ONet;
-//			ONet_->CopyTrainedLayersFrom(netpath["onet"].first);
-//		}
-//		catch(int error_){
-//			std::cerr<<"Fatal error wihile initializing network ONet..."<<std::endl;
-//			return -1;
-//		}
+		//ONet
+		try{
+			boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL));
+			// boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL, NULL));
+			ONet_ = ONet;
+			ONet_->CopyTrainedLayersFrom(netpath["onet"].first);
+		}
+		catch(int error_){
+			std::cerr<<"Fatal error wihile initializing network ONet..."<<std::endl;
+			return -1;
+		}
 		return 0;
 	};
 	//This function initialize a transformer which will transform the data to meet the require of network
@@ -96,9 +96,9 @@ public:
 	  	std::vector<std::vector<Dtype> > all_boxes = propose_bboxes(img, 0.709, 0.6);
 //        display_faces(img, all_boxes, false);
 	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
-        display_faces(img, all_boxes, false);
-//	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
-//	  	// display_faces(img, all_boxes, true);
+//        display_faces(img, all_boxes, false);
+	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
+        display_faces(img, all_boxes, true);
 //	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
 	}
@@ -172,6 +172,8 @@ private:
 		return selected_bboxes;
 	}
 	std::vector<std::vector<Dtype> > refine_bboxes(cv::Mat&img, std::vector<std::vector<Dtype> > &all_bboxes, float threshold) {
+        std::vector<std::vector<Dtype> > selected_bboxes;
+        if(all_bboxes.size() == 0) return selected_bboxes;
 		//First of all, we will prepare the input data for RNet
 	  	DetectTools dt_tools;
 	  	std::vector<std::vector<Dtype> > img_patches = dt_tools.bboxes2patches(all_bboxes, img.rows, img.cols);
@@ -209,7 +211,7 @@ private:
 			}
 		}
 		dt_tools.nonmaximumSuppression(selected_bboxes_mv, 0.7, dt_tools.UNION);
-		std::vector<std::vector<Dtype> > selected_bboxes = dt_tools.caliberateBboxes(selected_bboxes_mv);
+		selected_bboxes = dt_tools.caliberateBboxes(selected_bboxes_mv);
 	  	dt_tools.turn2rect(selected_bboxes);
 
 		return selected_bboxes;
@@ -229,10 +231,11 @@ private:
 
 		//Transform the Mat file into Blob
 		caffe::Blob<Dtype> input_blob;
-		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, 3, input_blob);
-		modify_network_input(ONet_, num_boxes, 3, hs, ws);
+        int channels = 1;
+		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
+		modify_network_input(ONet_, num_boxes, channels, hs, ws);
 		std::vector<caffe::Blob<Dtype>*> output_data = ONet_->Forward(input_data);
-		std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, 0.0, 1.0, 3);
+		std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, 0.0, 1.0, 2);
 		std::vector<std::vector<Dtype> > selected_bboxes_mv;
 		for(size_t iter = 0;iter<num_boxes;iter++) {
 			if(bboxes_info[iter][0]>threshold) {

@@ -245,6 +245,8 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
             img_path = file_path + "/cam0/" + img_name + ".jpg";
         }
         cv::Mat image;
+//        img_path = "/home/slam/DepthGesture/stnumber/build/1509071930041880334.png";
+//        bounding_boxes = get_bounding_boxes("/home/slam/DepthGesture/stnumber/build/1509071930041880334.xml");
         image = cv::imread(img_path, CV_8UC1);
         std::vector<std::vector<float> > hand_bbx =  detector_->detect_face(image);
         //get the details of file path
@@ -256,6 +258,7 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
         std::string positive_path_posi = dst_path + "/positive/" + file_name;
         std::string positive_path_part = dst_path + "/part/" + file_name;
 
+//        std::printf("The size of bbx is %d", int(hand_bbx.size()));
         //classifiy the bounding boxes according to the iou of bounding boxes
         for(int bbx_id = 0; bbx_id < hand_bbx.size(); bbx_id ++) {
             int x_l = std::max( hand_bbx[bbx_id][0], 0.0f );
@@ -278,8 +281,8 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
             }
             else if(patch_iou >= part_IOU_) {
                 float offset_x1 = (bounding_boxes[index].x - x_l) / float(x_r - x_l);
-                float offset_x2 = (bounding_boxes[index].y - y_l) / float(y_r - y_l);
-                float offset_y1 = (bounding_boxes[index].x + bounding_boxes[index].width - x_r) / float(x_r - x_l);
+                float offset_y1 = (bounding_boxes[index].y - y_l) / float(y_r - y_l);
+                float offset_x2 = (bounding_boxes[index].x + bounding_boxes[index].width - x_r) / float(x_r - x_l);
                 float offset_y2 = (bounding_boxes[index].y + bounding_boxes[index].height - y_r) / float(y_r - y_l);
                 //if it is a positive sample
                 if(patch_iou >= pos_IOU_) {
@@ -289,7 +292,7 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
                     cv::Mat img_patch = image(hand_rect).clone();
                     cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
                     cv::imwrite(img_name, img_patch);
-                    positive_fid_<<img_name<<" 1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+                    positive_fid_<<img_name<<" 1 "<<offset_x1<<" "<<offset_y1<<" "<<offset_x2<<" "<<offset_y2<<"\n";
                 }//if it is a part appearance sample
                 else if(patch_iou >= part_IOU_) {
                     char name_suffix[32];
@@ -298,7 +301,7 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
                     cv::Mat img_patch = image(hand_rect).clone();
                     cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
                     cv::imwrite(img_name, img_patch);
-                    part_fid_<<img_name<<" -1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+                    part_fid_<<img_name<<" -1 "<<offset_x1<<" "<<offset_y1<<" "<<offset_x2<<" "<<offset_y2<<"\n";
                 }
             }
         }

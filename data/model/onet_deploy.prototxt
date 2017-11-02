@@ -1,46 +1,10 @@
 #ONet
 #dim 48, dim 48
-layer {
-  top: "data"
-  top: "label"
-  name: "PData"
-  type: "HDF5Data"
-  include {
-    phase: TRAIN
-  }
-  hdf5_data_param {
-    source: "data/train_onet.txt"
-    batch_size: 128
-    shuffle: true
-  }
-}
-
-layer {
-  top: "data"
-  top: "label"
-  name: "PData"
-  type: "HDF5Data"
-  include {
-    phase: TEST
-  }
-  hdf5_data_param {
-    source: "data/test_onet.txt"
-    batch_size: 2048
-    shuffle: true
-  }
-}
-
-layer {
-  bottom: "label"
-  top: "clalabel"
-  top: "roi"
-  name: "slicer"
-  type: "Slice"
-  slice_param {
-    axis: 1
-    slice_point: 1
-  }
-}
+input: "data"
+input_dim: 1
+input_dim: 1
+input_dim: 48
+input_dim: 48
 
 layer{
   bottom: "data"
@@ -57,7 +21,7 @@ layer{
     }
     bias_filler {
       type: "constant"
-      value: 0.1
+      value: 0
     }
   }
   param {
@@ -104,7 +68,7 @@ layer {
     }
     bias_filler {
       type: "constant"
-      value: 0.1
+      value: 0
     }
   }
   param {
@@ -151,7 +115,7 @@ layer {
     }
     bias_filler {
       type: "constant"
-      value: 0.1
+      value: 0
     }
   }
   param {
@@ -198,7 +162,7 @@ layer {
 	}
 	bias_filler {
 	  type: "constant"
-	  value: 0.1
+	  value: 0
 	}
   }
   param {
@@ -231,7 +195,7 @@ layer {
 	}
 	bias_filler {
 	  type: "constant"
-	  value: 0.1
+	  value: 0
 	}
   }
   param {
@@ -264,7 +228,7 @@ layer {
 	}
 	bias_filler {
 	  type: "constant"
-	  value: 0.1
+	  value: 0
 	}
   }
   param {
@@ -291,7 +255,7 @@ layer {
 	}
 	bias_filler {
 	  type: "constant"
-	  value: 0.1
+	  value: 0
 	}
   }
   param {
@@ -305,40 +269,8 @@ layer {
 }
 
 layer {
+  name: "prob1"
+  type: "Softmax"
   bottom: "fc2_1"
-  bottom: "clalabel"
-  top: "label_loss"
-  name: "label_loss"
-  type: "SoftmaxWithLoss"
-  loss_weight: 1.0
-  loss_param {
-    ignore_label: 2
-  }
-}
-
-layer {
-  bottom: "fc2_2"
-  bottom: "roi"
-  top: "roi_loss"
-  name: "roi_loss"
-  type: "EuclideanLoss"
-  loss_weight: 0.0
-  loss_param {
-    ignore_label: 0
-  }
-}
-
-
-layer {
-  name: "accuracy"
-  type: "Accuracy"
-  bottom: "fc2_1"
-  bottom: "clalabel"
-  top: "accuracy"
-  include {
-    phase: TEST
-  }
-  accuracy_param {
-    ignore_label: 2
-  }
+  top: "prob1"
 }
