@@ -54,17 +54,17 @@ public:
 			std::cerr<<"Fatal error wihile initializing network PNet..."<<std::endl;
 			return -1;
 		}
-//		//RNet
-//		try{
-//			boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL));
-//			// boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL, NULL));
-//			RNet_ = RNet;
-//			RNet_->CopyTrainedLayersFrom(netpath["rnet"].first);
-//		}
-//		catch(int error_){
-//			std::cerr<<"Fatal error wihile initializing network RNet..."<<std::endl;
-//			return -1;
-//		}
+		//RNet
+		try{
+			boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL));
+			// boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL, NULL));
+			RNet_ = RNet;
+			RNet_->CopyTrainedLayersFrom(netpath["rnet"].first);
+		}
+		catch(int error_){
+			std::cerr<<"Fatal error wihile initializing network RNet..."<<std::endl;
+			return -1;
+		}
 //		//ONet
 //		try{
 //			boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL));
@@ -94,9 +94,9 @@ public:
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes = propose_bboxes(img, 0.709, 0.6);
-//	  	 display_faces(img, all_boxes, false);
-//	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
-//	  	// display_faces(img, all_boxes, false);
+//        display_faces(img, all_boxes, false);
+	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
+        display_faces(img, all_boxes, false);
 //	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
 //	  	// display_faces(img, all_boxes, true);
 //	  	// return alignment_faces(image, all_boxes);
@@ -179,14 +179,15 @@ private:
 		int num_boxes = img_patches.size();
 		int hs = 24;
 		int ws = 24;
+        int channels = 1;
 		for(size_t iter = 0;iter<num_boxes;iter++) {
 			box_img.push_back(Bbox(img_patches[iter][4], img_patches[iter][5], img_patches[iter][6], img_patches[iter][7]));
 		}
 
 		//Transform the Mat file into Blob
 		caffe::Blob<Dtype> input_blob;
-		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, 3, input_blob);
-		modify_network_input(RNet_, num_boxes, 3, hs, ws);
+		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
+		modify_network_input(RNet_, num_boxes, channels, hs, ws);
 		std::vector<caffe::Blob<Dtype>*> output_data = RNet_->Forward(input_data);
 		std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, 0.0, 1.0, 2);
 		std::vector<std::vector<Dtype> > selected_bboxes_mv;
@@ -278,9 +279,11 @@ private:
 	  	int num_channels_out_r = output_blob_ptr_bboxregression->channels();
 	  	int height_out_r = output_blob_ptr_bboxregression->height();
 		int width_out_r = output_blob_ptr_bboxregression->width();
+//        std::printf("p: %d, c:%d, h:%d, w:%d\n", num_patches_out_r, num_channels_out_r, height_out_r, width_out_r);
 		const Dtype *ptr_prob = output_blob_ptr_probability->cpu_data();
 	  	const Dtype *ptr_bxrg = output_blob_ptr_bboxregression->cpu_data();
-	  	const Dtype *ptr_ldmk = output_blob_ptr_landmarks->cpu_data();
+		const Dtype *ptr_ldmk;
+	  	if(whichnet == 3) ptr_ldmk = output_blob_ptr_landmarks->cpu_data();
 	  	int num_patches_out_l = 0;
 	  	int num_channels_out_l = 0;
 	  	int height_out_l = 0;
@@ -295,11 +298,10 @@ private:
 		int valid = 0;
 	  	for(int ind_n = 0;ind_n<num_patches_out;ind_n++) {
 	  		for(int ind_c = 1;ind_c<num_channels_out;ind_c++) {
-		  		for(int ind_h = 1;ind_h<height_out;ind_h++) {
+		  		for(int ind_h = 0;ind_h<height_out;ind_h++) {
 		  			for(int ind_w = 0;ind_w<width_out;ind_w++) {
 		  				Dtype point_v;
 			  			point_v = *(ptr_prob+ ( (ind_n*num_channels_out + ind_c)*height_out +ind_h)*width_out + ind_w);
-//                        printf("%f ", point_v);
 						if(point_v>=threshold) {
 	  						valid++;
 		  					std::vector<Dtype> bbox_information;

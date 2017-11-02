@@ -5,13 +5,15 @@ caffe.reset_all();
 % load face model and creat network
 caffe.set_device(0);
 caffe.set_mode_gpu();
-model = '../data/model/pnet_deploy.prototxt';
-weights = '../data/model/pnet_finetune_iter_3500.caffemodel';
+% model = '../data/model/pnet_deploy.prototxt';
+% weights = '../data/model/pnet_finetune_iter_3500.caffemodel';
+model = '../data/model/rnet_deploy.prototxt';
+weights = '../data/model/rnet_cla_iter_19700.caffemodel';
 net = caffe.Net(model, weights, 'test');
 
-img=imread('000.png');
+img=imread('203.png');
 img = (img - 17.26)/80;
-net.blobs('data').reshape([12 12 1 1]);
+net.blobs('data').reshape([24 24 1 1]);
 out=net.forward({img});
 caffe.reset_all()
 clc
