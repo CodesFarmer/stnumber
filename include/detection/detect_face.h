@@ -94,7 +94,7 @@ public:
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes = propose_bboxes(img, 0.709, 0.6);
-	  	 display_faces(img, all_boxes, false);
+//	  	 display_faces(img, all_boxes, false);
 //	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
 //	  	// display_faces(img, all_boxes, false);
 //	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
@@ -273,7 +273,7 @@ private:
 	  	int num_channels_out = output_blob_ptr_probability->channels();
 	  	int height_out = output_blob_ptr_probability->height();
 		int width_out = output_blob_ptr_probability->width();
-        std::printf("p: %d, c:%d, h:%d, w:%d\n", num_patches_out, num_channels_out, height_out, width_out);
+//        std::printf("p: %d, c:%d, h:%d, w:%d\n", num_patches_out, num_channels_out, height_out, width_out);
 		int num_patches_out_r = output_blob_ptr_bboxregression->num();
 	  	int num_channels_out_r = output_blob_ptr_bboxregression->channels();
 	  	int height_out_r = output_blob_ptr_bboxregression->height();

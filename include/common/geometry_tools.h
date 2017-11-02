@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace GEOMETRYTOOLS{
-    float regionsIOU(std::vector<cv::Rect>&, cv::Rect&);
+    float regionsIOU(std::vector<cv::Rect>&, cv::Rect&, int &index);
     float regionIOU(cv::Rect &, cv::Rect &);
 }
 

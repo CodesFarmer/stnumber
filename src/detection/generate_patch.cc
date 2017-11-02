@@ -87,7 +87,8 @@ void GeneratePatch::create_negative_samples(cv::Mat &img, std::vector<cv::Rect> 
         int x1 = rand()%(width - patch_size);
         int y1 = rand()%(height - patch_size);
         cv::Rect patch_bbx(x1, y1, patch_size, patch_size);
-        float patch_iou = GEOMETRYTOOLS::regionsIOU(obj_bbxes, patch_bbx);
+        int index = 0;
+        float patch_iou = GEOMETRYTOOLS::regionsIOU(obj_bbxes, patch_bbx, index);
         if(patch_iou < neg_IOU_) {
             char name_suffix[32];
             std::sprintf(name_suffix, "_%03d.png", valid_num);
@@ -161,7 +162,8 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
 //            cv::Rect patch_bbx(x_l, y_l, patch_size, patch_size);
             cv::Rect patch_bbx(x_l, y_l, x_r - x_l + 1, y_r - y_l + 1);
             //Decide which category the sample belong
-            float patch_iou = GEOMETRYTOOLS::regionsIOU(obj_bbxes, patch_bbx);
+            int index = 0;
+            float patch_iou = GEOMETRYTOOLS::regionsIOU(obj_bbxes, patch_bbx, index);
 
             float offset_x1 = (obj_bbxes[iter].x - x_l)/float(patch_size);
             float offset_x2 = (obj_bbxes[iter].y - y_l)/float(patch_size);
@@ -191,4 +193,125 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
             }
         }
     }
+}
+
+void GeneratePatch::initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > & model_path,
+                                        const float img2net_scale,
+                                        const std::vector<float> mean_value) {
+    detector_ = boost::make_shared<FaceDetector<float> >();
+    detector_->initialize_network(model_path);
+    detector_->initialize_transformer(img2net_scale, mean_value);
+}
+
+void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std::string dst_path) {
+    int length = FILEPARTS::counting_lines(filename);
+    std::ifstream input_fid;
+    input_fid.open(filename.c_str(), std::ios::in);
+    std::system(std::string("mkdir -p " + dst_path + "/negative/").c_str());
+    std::system(std::string("mkdir -p " + dst_path + "/positive/").c_str());
+    std::system(std::string("mkdir -p " + dst_path + "/part/").c_str());
+
+    //create file lists
+    if(access(std::string(dst_path + "/negative.txt").c_str(), F_OK) == -1){
+        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary);
+    }
+    else {
+        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+    }
+    if(access(std::string(dst_path + "/positive.txt").c_str(), F_OK) == -1){
+        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary);
+    }
+    else {
+        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+    }
+    if(access(std::string(dst_path + "/part.txt").c_str(), F_OK) == -1){
+        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary);
+    }
+    else {
+        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+    }
+
+    std::string file_path;
+    std::string img_name;
+    std::string img_path;
+    std::vector<cv::Rect> bounding_boxes;
+    int cur_iter = 0;
+    while(!input_fid.eof()) {
+        input_fid>>file_path;
+        input_fid>>img_name;
+        bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
+        img_path = file_path + "/cam0/" + img_name + ".png";
+        if(access(img_path.c_str(), F_OK) == -1) {
+            img_path = file_path + "/cam0/" + img_name + ".jpg";
+        }
+        cv::Mat image;
+        image = cv::imread(img_path, CV_8UC1);
+        std::vector<std::vector<float> > hand_bbx =  detector_->detect_face(image);
+        //get the details of file path
+        std::string file_path;
+        std::string file_name;
+        std::string file_ext;
+        FILEPARTS::fileparts(img_path, file_path, file_name, file_ext);
+        std::string negative_path = dst_path + "/negative/" + file_name;
+        std::string positive_path_posi = dst_path + "/positive/" + file_name;
+        std::string positive_path_part = dst_path + "/part/" + file_name;
+
+        //classifiy the bounding boxes according to the iou of bounding boxes
+        for(int bbx_id = 0; bbx_id < hand_bbx.size(); bbx_id ++) {
+            int x_l = std::max( hand_bbx[bbx_id][0], 0.0f );
+            int y_l = std::max( hand_bbx[bbx_id][1], 0.0f);
+            int x_r = std::min( hand_bbx[bbx_id][2], float(image.cols-1) );
+            int y_r = std::min( hand_bbx[bbx_id][3], float(image.rows-1) );
+            cv::Rect hand_rect(x_l, y_l, x_r - x_l + 1, y_r - y_l + 1);
+            int index;
+            float patch_iou = GEOMETRYTOOLS::regionsIOU(bounding_boxes, hand_rect, index);
+
+            //if iou is under neg_IOU_, then this is a negative sample
+            if(patch_iou < neg_IOU_) {
+                char name_suffix[32];
+                std::sprintf(name_suffix, "_%03d.png", bbx_id);
+                std::string img_name = negative_path + std::string(name_suffix);
+                cv::Mat img_patch = image(hand_rect).clone();
+                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
+                cv::imwrite(img_name, img_patch);
+                negative_fid_<<img_name<<" 0\n";
+            }
+            else if(patch_iou >= part_IOU_) {
+                float offset_x1 = (bounding_boxes[index].x - x_l) / float(x_r - x_l);
+                float offset_x2 = (bounding_boxes[index].y - y_l) / float(y_r - y_l);
+                float offset_y1 = (bounding_boxes[index].x + bounding_boxes[index].width - x_r) / float(x_r - x_l);
+                float offset_y2 = (bounding_boxes[index].y + bounding_boxes[index].height - y_r) / float(y_r - y_l);
+                //if it is a positive sample
+                if(patch_iou >= pos_IOU_) {
+                    char name_suffix[32];
+                    std::sprintf(name_suffix, "_%03d.png", bbx_id);
+                    std::string img_name = positive_path_posi + std::string(name_suffix);
+                    cv::Mat img_patch = image(hand_rect).clone();
+                    cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
+                    cv::imwrite(img_name, img_patch);
+                    positive_fid_<<img_name<<" 1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+                }//if it is a part appearance sample
+                else if(patch_iou >= part_IOU_) {
+                    char name_suffix[32];
+                    std::sprintf(name_suffix, "_%03d.png", bbx_id);
+                    std::string img_name = positive_path_part + std::string(name_suffix);
+                    cv::Mat img_patch = image(hand_rect).clone();
+                    cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
+                    cv::imwrite(img_name, img_patch);
+                    part_fid_<<img_name<<" -1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+                }
+            }
+        }
+
+        if(bounding_boxes.size() > 0 && hand_bbx.size() == 0) {
+            create_patches(img_path, bounding_boxes, img_size, dst_path);
+        }
+        std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
+                  << std::flush;
+        cur_iter++;
+    }
+    std::cout<<std::endl;
+    negative_fid_.close();
+    positive_fid_.close();
+    part_fid_.close();
 }

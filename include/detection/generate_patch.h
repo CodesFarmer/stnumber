@@ -13,10 +13,13 @@
 #include <iomanip>
 #include <unistd.h>
 #include <ctime>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 #include "filepath.h"
 #include "readxml_ct.h"
 #include "geometry_tools.h"
+#include "detect_face.h"
 
 class GeneratePatch{
 public:
@@ -25,6 +28,8 @@ public:
     void generate_patches(std::string filename,
                          int img_size,
                          std::string dst_path);//Similar to above
+    void generate_patches_cnn(std::string, int, std::string);
+    void initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &, const float, const std::vector<float>);
 private:
     void create_patches(std::string, std::vector<cv::Rect> &, int, std::string);
     void create_negative_samples(cv::Mat &, std::vector<cv::Rect> &, int, std::string);
@@ -38,6 +43,7 @@ private:
     std::ofstream negative_fid_;
     std::ofstream positive_fid_;
     std::ofstream part_fid_;
+    boost::shared_ptr<FaceDetector<float> > detector_;
 };
 
 
