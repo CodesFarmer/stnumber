@@ -18,7 +18,6 @@
 #include "caffe/layers/memory_data_layer.hpp"
 
 #include "detect_geometry.h"
-#include "alignment_geometry.h"
 
 template<typename Dtype> class FaceDetector {
 public:
@@ -55,28 +54,28 @@ public:
 			std::cerr<<"Fatal error wihile initializing network PNet..."<<std::endl;
 			return -1;
 		}
-		//RNet
-		try{
-			boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL));
-			// boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL, NULL));
-			RNet_ = RNet;
-			RNet_->CopyTrainedLayersFrom(netpath["rnet"].first);
-		}
-		catch(int error_){
-			std::cerr<<"Fatal error wihile initializing network RNet..."<<std::endl;
-			return -1;
-		}
-		//ONet
-		try{
-			boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL));
-			// boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL, NULL));
-			ONet_ = ONet;
-			ONet_->CopyTrainedLayersFrom(netpath["onet"].first);
-		}
-		catch(int error_){
-			std::cerr<<"Fatal error wihile initializing network ONet..."<<std::endl;
-			return -1;
-		}
+//		//RNet
+//		try{
+//			boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL));
+//			// boost::shared_ptr<caffe::Net<Dtype> > RNet(new caffe::Net<Dtype>(netpath["rnet"].second, caffe::TEST, 0, NULL, NULL));
+//			RNet_ = RNet;
+//			RNet_->CopyTrainedLayersFrom(netpath["rnet"].first);
+//		}
+//		catch(int error_){
+//			std::cerr<<"Fatal error wihile initializing network RNet..."<<std::endl;
+//			return -1;
+//		}
+//		//ONet
+//		try{
+//			boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL));
+//			// boost::shared_ptr<caffe::Net<Dtype> > ONet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL, NULL));
+//			ONet_ = ONet;
+//			ONet_->CopyTrainedLayersFrom(netpath["onet"].first);
+//		}
+//		catch(int error_){
+//			std::cerr<<"Fatal error wihile initializing network ONet..."<<std::endl;
+//			return -1;
+//		}
 		return 0;
 	};
 	//This function initialize a transformer which will transform the data to meet the require of network
@@ -90,50 +89,20 @@ public:
 		transformer_ = tmp_transform;
 	};
 	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image) {
-		cv::Mat img(image.rows, image.cols, CV_8UC3);
+		cv::Mat img(image.rows, image.cols, CV_8UC1);
 		image.copyTo(img);
-		cv::cvtColor(img, img, CV_BGR2RGB);
+//		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes = propose_bboxes(img, 0.709, 0.6);
-	  	// display_faces(img, all_boxes, false);
-	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
-	  	// display_faces(img, all_boxes, false);
-	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
-	  	// display_faces(img, all_boxes, true);
-	  	// return alignment_faces(image, all_boxes);
+	  	 display_faces(img, all_boxes, false);
+//	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
+//	  	// display_faces(img, all_boxes, false);
+//	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
+//	  	// display_faces(img, all_boxes, true);
+//	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
 	}
 private:
-	// std::vector<cv::Mat> alignment_faces(cv::Mat &image, std::vector<std::vector<Dtype> > bboxes) {
-	// 	std::vector<cv::Mat> detectedFaces;
-	// 	AlignmentTools *ptools;
-
-	// 	std::vector<cv::Point2f> coord5points;
-	// 	cv::Point2f tmp_point;
-	// 	tmp_point = cv::Point2f(30.2946, 51.6963);
-	// 	coord5points.push_back(tmp_point);
-	// 	tmp_point = cv::Point2f(65.5318, 51.5014);
-	// 	coord5points.push_back(tmp_point);
-	// 	tmp_point = cv::Point2f(48.0252, 71.7366);
-	// 	coord5points.push_back(tmp_point);
-	// 	tmp_point = cv::Point2f(33.5493, 92.3655);
-	// 	coord5points.push_back(tmp_point);
-	// 	tmp_point = cv::Point2f(62.7299, 92.2041);
-	// 	coord5points.push_back(tmp_point);
-
-	// 	for(size_t iter = 0;iter<bboxes.size();iter++) {
-	// 		std::vector<cv::Point2f> facial5points;
-	// 		for(size_t jter = 0;jter<5;jter++) {
-	// 			facial5points.push_back(cv::Point2f(bboxes[iter][jter*2 + 6], bboxes[iter][jter*2 + 7]));
-	// 		}
-	// 		cv::Mat dstImg = ptools->alignment2Standard(image, coord5points, facial5points);
-	// 		// cv::imshow("TEST", dstImg);
-	// 		// cv::waitKey(20000);
-	// 		detectedFaces.push_back(dstImg);
-	// 	}
-
-	// 	return detectedFaces;
-	// }
 	//Make a vector of Blob for input an image
 	std::vector<caffe::Blob<Dtype>*> prepare_data(cv::Mat& img, std::vector<Bbox> bboxes, int height, int width, int channels, caffe::Blob<Dtype> &input_blob) {
 		std::vector<cv::Mat> img_vec;
@@ -177,6 +146,7 @@ private:
 		std::vector<Bbox> box_img;
 		std::vector<std::vector<Dtype> > all_bboxes;
 		DetectTools dt_tools;
+        int channels = 1;
 		for(size_t iter = 0;iter<scales.size();iter++) {
 			int hs = int(std::ceil(float(height*scales[iter])));
 			int ws = int(std::ceil(float(width*scales[iter])));
@@ -185,9 +155,9 @@ private:
 			box_img.clear();
 			box_img.push_back(Bbox(0, 0, height-1, width-1));
 			caffe::Blob<Dtype> input_blob;
-			input_data = prepare_data(img, box_img, hs, ws, 3, input_blob);
+			input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
 
-			modify_network_input(PNet_, 1, 3, hs, ws);
+			modify_network_input(PNet_, 1, channels, hs, ws);
 			std::vector<caffe::Blob<Dtype>*> output_data	 = PNet_->Forward(input_data);
 			std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, threshold, scales[iter], 1);
 
@@ -303,6 +273,7 @@ private:
 	  	int num_channels_out = output_blob_ptr_probability->channels();
 	  	int height_out = output_blob_ptr_probability->height();
 		int width_out = output_blob_ptr_probability->width();
+        std::printf("p: %d, c:%d, h:%d, w:%d\n", num_patches_out, num_channels_out, height_out, width_out);
 		int num_patches_out_r = output_blob_ptr_bboxregression->num();
 	  	int num_channels_out_r = output_blob_ptr_bboxregression->channels();
 	  	int height_out_r = output_blob_ptr_bboxregression->height();
@@ -324,10 +295,11 @@ private:
 		int valid = 0;
 	  	for(int ind_n = 0;ind_n<num_patches_out;ind_n++) {
 	  		for(int ind_c = 1;ind_c<num_channels_out;ind_c++) {
-		  		for(int ind_h = 0;ind_h<height_out;ind_h++) {
+		  		for(int ind_h = 1;ind_h<height_out;ind_h++) {
 		  			for(int ind_w = 0;ind_w<width_out;ind_w++) {
 		  				Dtype point_v;
 			  			point_v = *(ptr_prob+ ( (ind_n*num_channels_out + ind_c)*height_out +ind_h)*width_out + ind_w);
+//                        printf("%f ", point_v);
 						if(point_v>=threshold) {
 	  						valid++;
 		  					std::vector<Dtype> bbox_information;
@@ -381,17 +353,17 @@ private:
 		}
 	}
 	void display_faces(cv::Mat&img, std::vector<std::vector<Dtype> > bboxes, bool landmarks) {
-		cv::Mat image(img.size(), CV_8UC3);
+		cv::Mat image(img.size(), CV_8UC1);
 		img.copyTo(image);
 		for(size_t iter = 0;iter<bboxes.size();iter++) {
-			cv::rectangle(image, cv::Point(bboxes[iter][1], bboxes[iter][0]), cv::Point(bboxes[iter][3], bboxes[iter][2]), cv::Scalar(255, 255, 0));
+			cv::rectangle(image, cv::Point(bboxes[iter][1], bboxes[iter][0]), cv::Point(bboxes[iter][3], bboxes[iter][2]), cv::Scalar(255, 255, 255));
 			if(landmarks && bboxes[iter].size()==16){
 				for(int jter = 0;jter<5;jter++) {
 					cv::drawMarker(image, cv::Point(bboxes[iter][jter*2 + 7], bboxes[iter][jter*2 + 6]), cv::Scalar(0, 255, 0), cv::MARKER_STAR, 4, 2);
 				}
 			}
 		}
-		cv::cvtColor(image, image, CV_BGR2RGB);
+//		cv::cvtColor(image, image, CV_BGR2RGB);
 		cv::transpose(image, image);
 		cv::imshow("The Bounding Box...", image);
 		cv::waitKey(5000);
