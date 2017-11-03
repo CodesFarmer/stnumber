@@ -218,6 +218,8 @@ private:
 	}
 
 	std::vector<std::vector<Dtype> > output_bboxes(cv::Mat&img, std::vector<std::vector<Dtype> > &all_bboxes, float threshold) {
+        std::vector<std::vector<Dtype> > selected_bboxes;
+        if(all_bboxes.size() == 0) return selected_bboxes;
 	  	DetectTools dt_tools;
 	  	std::vector<std::vector<Dtype> > img_patches = dt_tools.bboxes2patches(all_bboxes, img.rows, img.cols);
 		std::vector<Bbox> box_img;
@@ -232,6 +234,7 @@ private:
 		//Transform the Mat file into Blob
 		caffe::Blob<Dtype> input_blob;
         int channels = 1;
+		std::printf("TEST ONET...\n");
 		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
 		modify_network_input(ONet_, num_boxes, channels, hs, ws);
 		std::vector<caffe::Blob<Dtype>*> output_data = ONet_->Forward(input_data);
@@ -252,7 +255,7 @@ private:
 			}
 		}
 		dt_tools.nonmaximumSuppression(selected_bboxes_mv, 0.7, dt_tools.MIN);
-		std::vector<std::vector<Dtype> > selected_bboxes = dt_tools.caliberateBboxes(selected_bboxes_mv);
+        selected_bboxes = dt_tools.caliberateBboxes(selected_bboxes_mv);
 		for(size_t iter=0;iter<selected_bboxes_mv.size();iter++) {
 			Dtype region_h = selected_bboxes_mv[iter][2] - selected_bboxes_mv[iter][0] + 1;
 			Dtype region_w = selected_bboxes_mv[iter][3] - selected_bboxes_mv[iter][1] + 1;

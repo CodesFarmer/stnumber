@@ -8,8 +8,7 @@
 #include "detect_face.h"
 
 int main(int argc, char * argv[]) {
-    std::string image_path(argv[1]);
-    cv::Mat image = cv::imread(image_path, CV_8UC1);
+    std::string imgs_path(argv[1]);
     std::map<std::string, std::pair<std::string, std::string> > modelpath;
     std::string models_dir = "../data/model/";
     modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
@@ -22,8 +21,16 @@ int main(int argc, char * argv[]) {
         return -1;
     }
     detector->initialize_transformer(img2net_scale, mean_value);
-    std::vector<std::vector<float> > faces_bboxes =  detector->detect_face(image);
-    std::cout<<faces_bboxes.size()<<std::endl;
+
+    std::ifstream input_fid;
+    input_fid.open(imgs_path.c_str(), std::ios::in);
+    std::string img_name;
+    while(!input_fid.eof()) {
+        input_fid>>img_name;
+        cv::Mat image = cv::imread(img_name, CV_8UC1);
+        std::vector<std::vector<float> > faces_bboxes = detector->detect_face(image);
+        std::cout << faces_bboxes.size() << std::endl;
+    }
 
     return 0;
 }
