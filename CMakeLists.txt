@@ -4,6 +4,8 @@ include(cmake/ConfigureOpenCV.cmake)
 include(cmake/ConfigureCaffe.cmake)
 include(cmake/ConfigureTinyxml2.cmake)
 
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
+
 file(GLOB header_dir
         "include/*")
 include_directories(${header_dir})
@@ -16,7 +18,7 @@ file(GLOB ctools_source
         "src/common/*.cc"
         "src/detection/*.cc")
 
-add_library(ctools
+add_library(ctools SHARED
         ${ctools_header}
         ${ctools_source}
         )
@@ -27,13 +29,22 @@ set(SOURCE_HH_FILE
 set(SOURCE_CC_FILE
         "src/detection/hand_boundingbox.cc"
         )
-add_library(handdetect
+add_library(handdetect SHARED
         ${SOURCE_HH_FILE}
         ${SOURCE_CC_FILE}
         )
 set_target_properties(handdetect PROPERTIES OUTPUT_NAME "handdetect")
 target_link_libraries(handdetect ${DEST_LINK_TARGETS} ctools)
 
+set(CT_INCLUDE_INSTALL_PATH ${CMAKE_INSTALL_PREFIX})
+set(CT_LIB_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/lib)
+set(CMAKE_INSTALL_RPATH ${CT_LIB_INSTALL_PATH})
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH true)
+install(TARGETS ctools DESTINATION ${CMAKE_INSTALL_RPATH})
+install(TARGETS handdetect DESTINATION ${CMAKE_INSTALL_RPATH})
+install(DIRECTORY include DESTINATION ${CT_INCLUDE_INSTALL_PATH})
+
+message(STATUS "The install path: ${CMAKE_INSTALL_PREFIX}")
 
 add_executable(printtest test/test_fp.cc)
 add_executable(xmltest test/test_xml.cc)

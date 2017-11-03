@@ -107,10 +107,10 @@ private:
 	std::vector<caffe::Blob<Dtype>*> prepare_data(cv::Mat& img, std::vector<Bbox> bboxes, int height, int width, int channels, caffe::Blob<Dtype> &input_blob) {
 		std::vector<cv::Mat> img_vec;
 		for(size_t iter=0;iter<bboxes.size();iter++){
-			cv::Mat img_n(height, width, CV_32FC3);
+			cv::Mat img_n(height, width, img.depth());
 			cv::Rect facebbx(bboxes[iter].y1, bboxes[iter].x1, bboxes[iter].y2 - bboxes[iter].y1+1, bboxes[iter].x2 - bboxes[iter].x1+1);
 			cv::Mat tmp_img = img(facebbx);
-			tmp_img.convertTo(tmp_img, CV_32FC3);
+			tmp_img.convertTo(tmp_img, img.depth());
 			cv::resize(tmp_img, img_n, img_n.size(), 0, 0, cv::INTER_AREA);
 			img_vec.push_back(img_n);
 		}
