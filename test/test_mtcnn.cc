@@ -29,7 +29,7 @@ int main(int argc, char * argv[]) {
         input_fid>>img_name;
         cv::Mat image = cv::imread(img_name, CV_8UC1);
         std::vector<std::vector<float> > faces_bboxes = detector->detect_face(image);
-        std::cout << faces_bboxes.size() << std::endl;
+//        std::cout << faces_bboxes.size() << std::endl;
     }
 
     return 0;

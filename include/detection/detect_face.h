@@ -234,7 +234,6 @@ private:
 		//Transform the Mat file into Blob
 		caffe::Blob<Dtype> input_blob;
         int channels = 1;
-		std::printf("TEST ONET...\n");
 		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
 		modify_network_input(ONet_, num_boxes, channels, hs, ws);
 		std::vector<caffe::Blob<Dtype>*> output_data = ONet_->Forward(input_data);
