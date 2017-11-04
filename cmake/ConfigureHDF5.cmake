@@ -1,0 +1,14 @@
+
+find_package(HDF5)
+
+if(HDF5_FOUND)
+  list(APPEND DEST_LINK_TARGETS ${HDF5_LIBRARIES})
+  list(APPEND DEST_LINK_TARGETS ${HDF5_HL_LIBRARIES})
+#  list(APPEND DEST_LINK_TARGETS ${HDF5_CXX_LIBRARIES})
+#  list(APPEND DEST_LINK_TARGETS ${HDF5_CXX_HL_LIBRARIES})
+  list(APPEND DEST_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
+  message(STATUS "Compile With HDF5")
+else()
+  message(STATUS "Can not find HDF5...")
+endif()
+#include_directories(${DEST_INCLUDE_DIRS})

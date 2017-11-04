@@ -5,7 +5,7 @@ find_package(OpenCV)
 
 if(WITH_OPENCV)
     find_package(OpenCV REQUIRED)
-    list(APPEND ALL_INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS})
+    list(APPEND DEST_INCLUDE_DIRS ${OpenCV_INCLUDE_DIRS})
     list(APPEND DEST_LINK_TARGETS ${OpenCV_LIBRARIES})
     message(STATUS "Compile with OpenCV")
 else()

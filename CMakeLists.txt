@@ -3,12 +3,15 @@ cmake_minimum_required(VERSION 3.1.0)
 include(cmake/ConfigureOpenCV.cmake)
 include(cmake/ConfigureCaffe.cmake)
 include(cmake/ConfigureTinyxml2.cmake)
+include(cmake/ConfigureHDF5.cmake)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
+
 
 file(GLOB header_dir
         "include/*")
 include_directories(${header_dir})
+include_directories(${DEST_INCLUDE_DIRS})
 
 file(GLOB ctools_header
         "include/common/*.h"
@@ -52,9 +55,11 @@ add_executable(pathtest test/test_patch.cc)
 add_executable(patchtest test/test_patch.cc)
 add_executable(mtcnntest test/test_mtcnn.cc)
 add_executable(bbxtest test/test_bbx.cc)
+add_executable(hdf5test test/test_hdf5.cc)
 target_link_libraries(printtest ${DEST_LINK_TARGETS} ctools)
 target_link_libraries(xmltest ${DEST_LINK_TARGETS} ctools)
 target_link_libraries(pathtest ${DEST_LINK_TARGETS} ctools)
 target_link_libraries(patchtest ${DEST_LINK_TARGETS} ctools)
 target_link_libraries(mtcnntest ${DEST_LINK_TARGETS} ctools)
-target_link_libraries(bbxtest handdetect)
+target_link_libraries(bbxtest ${DEST_LINK_TARGETS} handdetect)
+target_link_libraries(hdf5test ${DEST_LINK_TARGETS} ctools)
