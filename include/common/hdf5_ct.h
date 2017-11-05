@@ -17,34 +17,25 @@
 
 class Mat2H5 {
 public:
+    Mat2H5(float mean_val = 127, float var = 1/128.0f)
+            :mean_value_(mean_val), shrink_ratio_(var){};
     struct h5dataset {
         std::string datasetname;
         std::string datatype;
         int rank;
         std::vector<hsize_t > dimension;
-//        H5::PredType get_data_type() {
-//            if(boost::iequals(datatype, "float"))
-//                return H5::PredType::NATIVE_FLOAT;
-//            if(boost::iequals(datatype, "int"))
-//                return H5::PredType::NATIVE_INT;
-//            if(boost::iequals(datatype, "uint8"))
-//                return H5::PredType::NATIVE_UINT8;
-//            if(boost::iequals(datatype, "double"))
-//                return H5::PredType::NATIVE_DOUBLE;
-//            if(boost::iequals(datatype, "uint16"))
-//                return H5::PredType::NATIVE_UINT16;
-//            if(boost::iequals(datatype, "uint32"))
-//                return H5::PredType::NATIVE_UINT32;
-//        }
     };
     void create_hdf5(std::string);
     void open_hdf5(std::string);
     void close_hdf5();
-    void write2hdf5(h5dataset, const std::vector<cv::Mat>&);
+    void write_mat2hdf5(h5dataset, const std::vector<cv::Mat>&);
+    void write_array2hdf5(h5dataset, const float*);
 private:
-    void transfer2array(float*, std::vector<cv::Mat>&);
+    void transfer2array(float*, const std::vector<cv::Mat>&);
 private:
     hid_t h5_fid_;
+    float mean_value_;
+    float shrink_ratio_;
 };
 
 #endif //PROJECT_HDF5_CT_H
