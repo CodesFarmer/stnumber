@@ -1,5 +1,5 @@
-set(CaffePath "/home/lowell/softwares/caffe")
-#set(CaffePath "/home/slam/FaceUntouch/caffe-master")
+#set(CaffePath "/home/lowell/softwares/caffe")
+set(CaffePath "/home/slam/FaceUntouch/caffe-master")
 LIST(APPEND DEST_INCLUDE_DIRS "${CaffePath}/include")
 set(WITH_CAFFE "Build with Caffe support" ON)
 
