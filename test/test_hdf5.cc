@@ -30,7 +30,7 @@ int main(int argc, char * argv[]) {
         transfer->write_data2hdf5(image_set);
         float label[] = {1.0f, 3.0f, 2.0f, 4.0f, 9.0f, 8.0f, 6.0f, 7.0f};
         transfer->write_label2hdf5(label, 2);
-        transfer->close_hdf5();
     }
+    transfer->close_hdf5();
     return 0;
 }

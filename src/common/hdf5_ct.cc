@@ -17,9 +17,7 @@ void Mat2H5::create_hdf5(std::string h5_filename) {
 }
 
 void Mat2H5::create_dataset(DataName data_name, std::vector<int> dimension, std::string data_type) {
-    std::printf("Step in create_dataset: 0.1");
     std::string dataset_name;
-    std::printf("Step in create_dataset: 0.2");
     if(data_name == DATA) dataset_name = "/data";
     else if(data_name == LABEL) dataset_name = "/label";
     int num_axes = dimension.size();
@@ -33,13 +31,10 @@ void Mat2H5::create_dataset(DataName data_name, std::vector<int> dimension, std:
         chunk_dims[iter] = dimension[iter];
         data_num = data_num * dims[iter];
     }
-    std::printf("Step in create_dataset: 0.8");
     max_dims[0] = H5S_UNLIMITED;
     dims[0] = 0;
-    std::printf("Step in create_dataset: 1");
     //set the dataspace
     H5::DataSpace *dataspace = new H5::DataSpace(num_axes, dims, max_dims);
-    std::printf("Step in create_dataset: 2");
     //Set the property lists
     H5::DSetCreatPropList prop_list;
     chunk_dims[0] = chunk_size_;
@@ -64,10 +59,10 @@ void Mat2H5::create_dataset(DataName data_name, std::vector<int> dimension, std:
         }
         label_type_ = get_type(data_type);
     }
+    prop_list.close();
     delete [] max_dims;
     delete [] chunk_dims;
-    delete [] dataspace;
-    prop_list.close();
+    delete dataspace;
 }
 
 void Mat2H5::open_hdf5(std::string h5_filename) {
