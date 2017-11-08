@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.1.0)
 
+add_definitions(-DUSE_OPENCV)
 include(cmake/ConfigureOpenCV.cmake)
 include(cmake/ConfigureCaffe.cmake)
 include(cmake/ConfigureTinyxml2.cmake)
 include(cmake/ConfigureHDF5.cmake)
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
-#link_libraries(/home/slam/UntouchWorkspace/Thirdparty/free/x86_64-linux/CMake-hdf5-1.10.1/hdf5-1.10.1/build/install/lib)
 
 file(GLOB header_dir
         "include/*")
