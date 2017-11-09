@@ -94,12 +94,12 @@ public:
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes;
-        all_boxes = propose_bboxes(img, 0.709, 0.6);
+        all_boxes = propose_bboxes(img, 0.709, 0.7);
 //        display_faces(img, all_boxes, false);
-	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
-        display_faces(img, all_boxes, false);
+	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
+//        display_faces(img, all_boxes, false);
 	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
-//        display_faces(img, all_boxes, true);
+////        display_faces(img, all_boxes, true);
 //	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
 	}

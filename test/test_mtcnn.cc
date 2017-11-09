@@ -1,11 +1,12 @@
 #include <opencv2/opencv.hpp>
-#include <iostream>
-#include <map>
-#include <vector>
+#include <ctime>
+#include <sys/time.h>
+#include <iomanip>
 
 #include "filepath.h"
 #include "readxml_ct.h"
 #include "detect_face.h"
+#include "hand_boundingbox.h"
 
 int main(int argc, char * argv[]) {
     std::string imgs_path(argv[1]);
@@ -13,9 +14,10 @@ int main(int argc, char * argv[]) {
     std::string models_dir = "../data/model/";
     modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_200000.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
     modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_iter_20000.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
+    modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_10000.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
 //    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
 //    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
-    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
+//    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
     std::vector<float> mean_value(1, 17.2196);
     float img2net_scale = 0.0125;
     FaceDetector<float>* detector = new FaceDetector<float>();
@@ -27,12 +29,32 @@ int main(int argc, char * argv[]) {
     std::ifstream input_fid;
     input_fid.open(imgs_path.c_str(), std::ios::in);
     std::string img_name;
-    while(!input_fid.eof()) {
+
+    struct timeval formertime;
+    struct timeval curtime;
+    gettimeofday(&formertime, NULL);
+    int jter = 0;
+    double sum_time = 0.0;
+    initialize_detector(modelpath);
+    while(!input_fid.eof() && jter <1000) {
         input_fid>>img_name;
         cv::Mat image = cv::imread(img_name, CV_8UC1);
-        std::vector<std::vector<float> > faces_bboxes = detector->detect_face(image);
-//        std::cout << faces_bboxes.size() << std::endl;
+
+        gettimeofday(&formertime, NULL);
+        cv::Rect hand_bbx = get_hand_bbx(image);
+//        detector->detect_face(image);
+        gettimeofday(&curtime, NULL);
+        double time_cost = (curtime.tv_sec - formertime.tv_sec) + (curtime.tv_usec - formertime.tv_usec) / 1000000.0;
+        sum_time += time_cost;
+        std::cout<<time_cost<<std::endl;
+        jter++;
+
+        //Display the image
+        cv::rectangle(image, hand_bbx, cv::Scalar(255));
+        cv::imshow("BBX", image);
+        cv::waitKey(10);
     }
+    std::cout<<"The mean time cost: "<<sum_time/100.0<<std::endl;
 
     return 0;
 }
