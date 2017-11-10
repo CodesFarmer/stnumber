@@ -94,12 +94,12 @@ public:
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes;
-        all_boxes = propose_bboxes(img, 0.709, 0.6);
-//        display_faces(img, all_boxes, false);
-	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
-        display_faces(img, all_boxes, false);
+        all_boxes = propose_bboxes(img, 0.709, 0.7);
+//        display_faces(img, all_boxes, "pnet", false);
+	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
+//        display_faces(img, all_boxes, "rnet", false);
 	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
-//        display_faces(img, all_boxes, true);
+//        display_faces(img, all_boxes, "onet", true);
 //	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
 	}
@@ -360,7 +360,7 @@ private:
 		  	}
 		}
 	}
-	void display_faces(cv::Mat&img, std::vector<std::vector<Dtype> > bboxes, bool landmarks) {
+	void display_faces(cv::Mat&img, std::vector<std::vector<Dtype> > bboxes, std::string window_name, bool landmarks) {
 		cv::Mat image(img.size(), CV_8UC1);
 		img.copyTo(image);
 		for(size_t iter = 0;iter<bboxes.size();iter++) {
@@ -373,7 +373,7 @@ private:
 		}
 //		cv::cvtColor(image, image, CV_BGR2RGB);
 		cv::transpose(image, image);
-		cv::imshow("The Bounding Box...", image);
+		cv::imshow(window_name, image);
 		cv::waitKey(0);
 	}
 private:
