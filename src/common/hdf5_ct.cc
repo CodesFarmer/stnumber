@@ -77,15 +77,11 @@ void Mat2H5::close_hdf5() {
 }
 
 void Mat2H5::write_data2hdf5(const std::vector<cv::Mat> &sources) {
-    std::printf("Step in write_data2hdf5: 1\n");
     //extend data set first
     data_dims_[0] = data_dims_[0] + hsize_t(sources.size());
-    std::printf("Step in write_data2hdf5: 1.5\n");
     dataset_data_->extend(&data_dims_[0]);
-    std::printf("Step in write_data2hdf5: 2\n");
     //extend space
     H5::DataSpace *filespace = new H5::DataSpace(dataset_data_->getSpace());
-    std::printf("Step in write_data2hdf5: 2.5\n");
     int num_axes = data_dims_.size();
     std::vector<hsize_t> dims_ext(num_axes, 0);
     for(int iter = 0;iter<num_axes;iter++ ) {
@@ -94,12 +90,9 @@ void Mat2H5::write_data2hdf5(const std::vector<cv::Mat> &sources) {
     dims_ext[0] = hsize_t(sources.size());
     std::vector<hsize_t> offset(num_axes, 0);
     offset[0] = data_offset_;
-    std::printf("Step in write_data2hdf5: 3\n");
     filespace->selectHyperslab(H5S_SELECT_SET, &dims_ext[0], &offset[0]);
-    std::printf("Step in write_data2hdf5: 3.5\n");
     //create new data space
-    H5::DataSpace *memspace = new H5::DataSpace(2, &dims_ext[0], NULL);
-    std::printf("Step in write_data2hdf5: 4.5\n");
+    H5::DataSpace *memspace = new H5::DataSpace(num_axes, &dims_ext[0], NULL);
     //write the data into dataset
     int data_ext_num = 1;
     for(int iter = 0;iter<num_axes;iter++ ) {
@@ -107,9 +100,7 @@ void Mat2H5::write_data2hdf5(const std::vector<cv::Mat> &sources) {
     }
     float *data_ext = new float[data_ext_num];
     transfer2array(data_ext, sources);
-    std::printf("Step in write_data2hdf5: 5\n");
     dataset_data_->write(data_ext, data_type_, *memspace, *filespace);
-    std::printf("Step in write_data2hdf5: 5.5\n");
     data_offset_ = data_offset_ + hsize_t(sources.size());
     //free memories
     delete [] data_ext;
@@ -133,7 +124,7 @@ void Mat2H5::write_label2hdf5(const float* data_array, int num_samples) {
     offset[0] = label_offset_;
     filespace->selectHyperslab(H5S_SELECT_SET, &dims_ext[0], &offset[0]);
     //create new data space
-    H5::DataSpace *memspace = new H5::DataSpace(2, &dims_ext[0], NULL);
+    H5::DataSpace *memspace = new H5::DataSpace(num_axes, &dims_ext[0], NULL);
     //write the data into data set
     int data_ext_num = 1;
     for(int iter = 0;iter<num_axes;iter++ ) {
@@ -142,8 +133,8 @@ void Mat2H5::write_label2hdf5(const float* data_array, int num_samples) {
     dataset_label_->write(data_array, label_type_, *memspace, *filespace);
     label_offset_ = label_offset_ + hsize_t(num_samples);
     //free memories
-    delete [] memspace;
-    delete [] filespace;
+    delete memspace;
+    delete filespace;
 }
 
 void Mat2H5::transfer2array(float *dst_array, const std::vector<cv::Mat> &sources) {
