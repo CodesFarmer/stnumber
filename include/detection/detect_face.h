@@ -93,12 +93,13 @@ public:
 		image.copyTo(img);
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
-	  	std::vector<std::vector<Dtype> > all_boxes = propose_bboxes(img, 0.709, 0.6);
+	  	std::vector<std::vector<Dtype> > all_boxes;
+        all_boxes = propose_bboxes(img, 0.709, 0.6);
 //        display_faces(img, all_boxes, false);
 	  	all_boxes = refine_bboxes(img, all_boxes, 0.7);
-//        display_faces(img, all_boxes, false);
+        display_faces(img, all_boxes, false);
 	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
-        display_faces(img, all_boxes, true);
+//        display_faces(img, all_boxes, true);
 //	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
 	}
@@ -168,7 +169,7 @@ private:
 		dt_tools.nonmaximumSuppression(all_bboxes, 0.7, dt_tools.UNION);
 		std::vector<std::vector<Dtype> > selected_bboxes = dt_tools.caliberateBboxes(all_bboxes);
 	  	dt_tools.turn2rect(selected_bboxes);
-		
+
 		return selected_bboxes;
 	}
 	std::vector<std::vector<Dtype> > refine_bboxes(cv::Mat&img, std::vector<std::vector<Dtype> > &all_bboxes, float threshold) {
@@ -373,7 +374,7 @@ private:
 //		cv::cvtColor(image, image, CV_BGR2RGB);
 		cv::transpose(image, image);
 		cv::imshow("The Bounding Box...", image);
-		cv::waitKey(5000);
+		cv::waitKey(0);
 	}
 private:
 	boost::shared_ptr<caffe::Net<Dtype> > PNet_;

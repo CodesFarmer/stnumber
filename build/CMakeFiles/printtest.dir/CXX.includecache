@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/common/filepath.h
+string
+-
+iostream
+-
+fstream
+-
+
+/home/lowell/MachineLearning/CppProgram/CaffeTools/test/test_fp.cc
+iostream
+-
+string
+-
+filepath.h
+/home/lowell/MachineLearning/CppProgram/CaffeTools/test/filepath.h
+
