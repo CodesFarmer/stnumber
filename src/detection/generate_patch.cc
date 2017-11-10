@@ -318,3 +318,26 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
     positive_fid_.close();
     part_fid_.close();
 }
+
+void GeneratePatch::write_to_disk(const cv::Mat & img, const cv::Point2f &ptl, const cv::Point2f &ptr, int label,
+                                  const std::string & name_prefix,
+                                  std::ofstream &output_fid, const bool augmentation) {
+    //Write the original image
+    int aug_id = 0;
+    char name_suffix[32];
+    std::sprintf(name_suffix, "_%02d.png", aug_id);
+    std::string img_name = name_prefix + std::string(name_suffix);
+    cv::Mat img_patch = img;
+    cv::imwrite(img_name, img_patch);
+    float offset_x1 = ptl.x;
+    float offset_y1 = ptl.y;
+    float offset_x2 = ptr.x;
+    float offset_y2 = ptr.y;
+    output_fid<< img_name <<" "<<label<<" "<<offset_x1<<" "<<offset_y1<<" "<<offset_x2<<" "<<offset_y2<<"\n";
+    //Augment the data into 4 directions
+    if(augmentation) {
+        cv::Mat img_01;
+        img_01 = img.clone();
+        cv::transpose(img_01, img_01);
+    }
+}

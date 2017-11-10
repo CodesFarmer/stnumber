@@ -34,6 +34,8 @@ private:
     void create_patches(std::string, std::vector<cv::Rect> &, int, std::string);
     void create_negative_samples(cv::Mat &, std::vector<cv::Rect> &, int, std::string);
     void create_positive_samples(cv::Mat &, std::vector<cv::Rect> &, int, std::string, std::string);
+    void write_to_disk(const cv::Mat &, const cv::Point2f &, const cv::Point2f &, int, const std::string &,
+                       std::ofstream &, const bool augmentation=false);
 private:
     int num_negative_;//How much negative samples we cropping from image
     int num_positive_;//Similar to above

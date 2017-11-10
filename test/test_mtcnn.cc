@@ -14,7 +14,7 @@ int main(int argc, char * argv[]) {
     std::string models_dir = "../data/model/";
     modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_200000.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
     modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_iter_20000.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
-    modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_10000.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
+    modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_20000.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
 //    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
 //    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
 //    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
@@ -52,7 +52,7 @@ int main(int argc, char * argv[]) {
         //Display the image
         cv::rectangle(image, hand_bbx, cv::Scalar(255));
         cv::imshow("BBX", image);
-        cv::waitKey(10);
+        cv::waitKey(0);
     }
     std::cout<<"The mean time cost: "<<sum_time/100.0<<std::endl;
 
