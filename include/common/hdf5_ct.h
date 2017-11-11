@@ -18,7 +18,7 @@
 
 class Mat2H5 {
 public:
-    Mat2H5(float mean_val = 127, float var = 1/128.0f, int chunk_size = 100)
+    Mat2H5(float mean_val = 0, float var = 1.0f, int chunk_size = 100)
             :mean_value_(mean_val), shrink_ratio_(var),
              chunk_size_(chunk_size), data_offset_(0), label_offset_(0),
              data_type_(H5::PredType::NATIVE_FLOAT), label_type_(H5::PredType::NATIVE_FLOAT){};
@@ -41,13 +41,14 @@ private:
     float shrink_ratio_;
     hsize_t data_offset_;
     hsize_t label_offset_;
-    int chunk_size_;
+    hsize_t chunk_size_;
     boost::shared_ptr<H5::DataSet>  dataset_data_;
     std::vector<hsize_t > data_dims_;
     boost::shared_ptr<H5::DataSet>  dataset_label_;
     std::vector<hsize_t> label_dims_;
     H5::PredType data_type_;
     H5::PredType label_type_;
+private:
 };
 
 #endif //PROJECT_HDF5_CT_H

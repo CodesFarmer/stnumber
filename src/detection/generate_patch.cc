@@ -1,6 +1,6 @@
 #include "generate_patch.h"
 
-void GeneratePatch::generate_patches(std::string filename, int img_size, std::string dst_path) {
+void GeneratePatch::generate_patches_disk(std::string filename, int img_size, std::string dst_path) {
     int length = FILEPARTS::counting_lines(filename);
     std::ifstream input_fid;
     input_fid.open(filename.c_str(), std::ios::in);
@@ -27,6 +27,57 @@ void GeneratePatch::generate_patches(std::string filename, int img_size, std::st
     else {
         part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
     }
+
+    save_mode_ = DISK;
+
+    std::string file_path;
+    std::string img_name;
+    std::string img_path;
+    std::vector<cv::Rect> bounding_boxes;
+    int cur_iter = 0;
+    while(!input_fid.eof()) {
+        input_fid>>file_path;
+        input_fid>>img_name;
+        bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
+        img_path = file_path + "/cam0/" + img_name + ".png";
+        if(access(img_path.c_str(), F_OK) == -1) {
+            img_path = file_path + "/cam0/" + img_name + ".jpg";
+        }
+
+        if(bounding_boxes.size() > 0) {
+            create_patches(img_path, bounding_boxes, img_size, dst_path);
+        }
+        std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
+                  << std::flush;
+        cur_iter++;
+    }
+    std::cout<<std::endl;
+    negative_fid_.close();
+    positive_fid_.close();
+    part_fid_.close();
+}
+
+void GeneratePatch::generate_patches_hdf5(std::string filename, int img_size, std::string dst_path) {
+    int length = FILEPARTS::counting_lines(filename);
+    std::ifstream input_fid;
+    input_fid.open(filename.c_str(), std::ios::in);
+
+    //create HDF5 file
+    //Setup the dimension of input data
+    std::vector<int> data_dimension;
+    data_dimension.push_back(1000);//num of batches
+    data_dimension.push_back(2);//channels
+    data_dimension.push_back(img_size);//height
+    data_dimension.push_back(img_size);//width
+    //Setup the size of label
+    std::vector<int> label_dimension;
+    label_dimension.push_back(2);
+    label_dimension.push_back(4);
+    //create the data sets
+    transfer_ = boost::make_shared<Mat2H5>(0.0, 1.0f, 1000);
+    transfer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
+    transfer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
+    save_mode_ = HDF5;
 
     std::string file_path;
     std::string img_name;
@@ -91,18 +142,28 @@ void GeneratePatch::create_negative_samples(cv::Mat &img, std::vector<cv::Rect> 
         float patch_iou = GEOMETRYTOOLS::regionsIOU(obj_bbxes, patch_bbx, index);
         if(patch_iou < neg_IOU_) {
             char name_suffix[32];
-            std::sprintf(name_suffix, "_%03d.png", valid_num);
+            std::sprintf(name_suffix, "_%03d", valid_num);
             std::string img_name = file_prefix + std::string(name_suffix);
-            cv::Mat img_patch = img(patch_bbx).clone();
-            cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-            cv::imwrite(img_name, img_patch);
-            negative_fid_<<img_name<<" 0\n";
+//            cv::Mat img_patch = img(patch_bbx).clone();
+//            cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
+//            cv::imwrite(img_name, img_patch);
+//            negative_fid_<<img_name<<" 0\n";
+            write_to_disk(img, img_size, img_name, 0, true, patch_bbx, patch_bbx);
             valid_num++;
         }
     }
 }
 
-void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> &obj_bbxes, int img_size, std::string dst_posi, std::string dst_part) {
+/*
+ * The function create positive or part samples according to the original image and the ground truth bounding box
+ * --img            the original image
+ * --obj_bbxes      bounding box of ground truth
+ * --img_size       destination images with fixed size
+ * --dest_posi      the path to write the positive images
+ * --dst_part       the path to write the partial images
+ */
+void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> &obj_bbxes, int img_size,
+                                            std::string dst_posi, std::string dst_part) {
     //crop image around each bounding box
     srand(time(NULL));
     for(int iter = 0; iter < int(obj_bbxes.size()); iter++) {
@@ -171,23 +232,25 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
             float offset_y2 = (obj_bbxes[iter].y + height - y_r)/float(patch_size);
             if(patch_iou >= pos_IOU_) {
                 char name_suffix[32];
-                std::sprintf(name_suffix, "_%03d.png", posi_num);
+                std::sprintf(name_suffix, "_%03d", posi_num);
                 std::string img_name = dst_posi + std::string(name_suffix);
-                cv::Mat img_patch = img(patch_bbx).clone();
-                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-                cv::imwrite(img_name, img_patch);
-                positive_fid_<<img_name<<" 1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+//                cv::Mat img_patch = img(patch_bbx).clone();
+//                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
+//                cv::imwrite(img_name, img_patch);
+//                positive_fid_<<img_name<<" 1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+                write_to_disk(img, img_size, img_name, 1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), obj_bbxes[iter]);
                 posi_num++;
                 jter++;
             }
             else if(patch_iou >= part_IOU_) {
                 char name_suffix[32];
-                std::sprintf(name_suffix, "_%03d.png", part_num);
+                std::sprintf(name_suffix, "_%03d", part_num);
                 std::string img_name = dst_part + std::string(name_suffix);
-                cv::Mat img_patch = img(patch_bbx).clone();
-                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-                cv::imwrite(img_name, img_patch);
-                part_fid_<<img_name<<" -1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+//                cv::Mat img_patch = img(patch_bbx).clone();
+//                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
+//                cv::imwrite(img_name, img_patch);
+//                part_fid_<<img_name<<" -1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
+                write_to_disk(img, img_size, img_name, -1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), obj_bbxes[iter]);
                 part_num++;
                 jter++;
             }
@@ -203,6 +266,10 @@ void GeneratePatch::initialize_detector(const std::map<std::string, std::pair<st
     detector_->initialize_transformer(img2net_scale, mean_value);
 }
 
+/*
+ * Generate patches with MTCNN
+ * The function forward an image through mtcnn with and get the patches generated from mtcnn
+ */
 void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std::string dst_path) {
     int length = FILEPARTS::counting_lines(filename);
     std::ifstream input_fid;
@@ -319,25 +386,135 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
     part_fid_.close();
 }
 
-void GeneratePatch::write_to_disk(const cv::Mat & img, const cv::Point2f &ptl, const cv::Point2f &ptr, int label,
-                                  const std::string & name_prefix,
-                                  std::ofstream &output_fid, const bool augmentation) {
+/*
+ * This function write the data sets at four direction into disk
+ * input:
+ * --image          original image
+ * --rect_sample    the sample rectangle
+ * --rect_ground    the ground truth bounding box
+ * --label          label the the sample (negative, part, positive)
+ * --augmentation   whether to augment the data set into 4 direction or not
+ * --img_size       finally size of the samples
+ */
+void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std::string & name_prefix, int label,
+                                  const bool augmentation, const cv::Rect &rect_sample, const cv::Rect &rect_ground) {
+    float bias = 1e-30;
     //Write the original image
+    int xs_l = rect_sample.x;
+    int ys_l = rect_sample.y;
+    int xs_r = rect_sample.x + rect_sample.width;
+    int ys_r = rect_sample.y + rect_sample.height;
+    int xg_l = rect_ground.x;
+    int yg_l = rect_ground.y;
+    int xg_r = rect_ground.x + rect_ground.width;
+    int yg_r = rect_ground.y + rect_ground.height;
     int aug_id = 0;
     char name_suffix[32];
     std::sprintf(name_suffix, "_%02d.png", aug_id);
     std::string img_name = name_prefix + std::string(name_suffix);
-    cv::Mat img_patch = img;
+    cv::Mat img_patch = image(rect_sample).clone();
+    cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
     cv::imwrite(img_name, img_patch);
-    float offset_x1 = ptl.x;
-    float offset_y1 = ptl.y;
-    float offset_x2 = ptr.x;
-    float offset_y2 = ptr.y;
-    output_fid<< img_name <<" "<<label<<" "<<offset_x1<<" "<<offset_y1<<" "<<offset_x2<<" "<<offset_y2<<"\n";
+    float offset_x1 = (xg_l - xs_l) / (xs_r - xs_l + bias);
+    float offset_y1 = (yg_l - ys_l) / (ys_r - ys_l + bias);
+    float offset_x2 = (xg_r - xs_r) / (xs_r - xs_l + bias);
+    float offset_y2 = (yg_r - ys_r) / (ys_r - ys_l + bias);
+    std::vector<float> labels(5, 0);
+    labels[0] = label;
+    labels[1] = offset_x1;
+    labels[2] = offset_y1;
+    labels[3] = offset_x2;
+    labels[4] = offset_y2;
+    save2disk(image, labels, img_name);
+
+
     //Augment the data into 4 directions
     if(augmentation) {
+        //image transpose
+        cv::Mat img_10;
+        img_10 = img_patch.clone();
+        cv::transpose(img_10, img_10);
+        int x_l1 = ys_l;
+        int y_l1 = xs_l;
+        int x_r1 = ys_r;
+        int y_r1 = xs_r;
+        offset_x1 = (yg_l - x_l1) / float(x_r1 - x_l1);
+        offset_y1 = (xg_l - y_l1) / float(y_r1 - y_l1);
+        offset_x2 = (yg_r - x_r1) / float(x_r1 - x_l1);
+        offset_y2 = (xg_r - y_r1) / float(y_r1 - y_l1);
+        aug_id++;
+        std::sprintf(name_suffix, "_%02d.png", aug_id);
+        img_name = name_prefix + std::string(name_suffix);
+        cv::imwrite(img_name, img_10);
+        labels[0] = label;
+        labels[1] = offset_x1;
+        labels[2] = offset_y1;
+        labels[3] = offset_x2;
+        labels[4] = offset_y2;
+        save2disk(image, labels, img_name);
+
+        //image flip vertically
         cv::Mat img_01;
-        img_01 = img.clone();
-        cv::transpose(img_01, img_01);
+        img_01 = img_patch.clone();
+        cv::flip(img_01, img_01, 0);
+        int x_l2 = xs_l;
+        int y_l2 = image.rows - ys_r;
+        int x_r2 = xs_r;
+        int y_r2 = image.rows - ys_l;
+        offset_x1 = (xg_l - x_l2) / float(x_r2 - x_l2);
+        offset_y1 = (image.rows - yg_r - y_l2) / float(y_r2 - y_l2);
+        offset_x2 = (xg_r - x_l2) / float(x_r2 - x_l2);
+        offset_y2 = (image.rows - yg_l - y_l2) / float(y_r2 - y_l2);
+        aug_id++;
+        std::sprintf(name_suffix, "_%02d.png", aug_id);
+        img_name = name_prefix + std::string(name_suffix);
+        cv::imwrite(img_name, img_01);
+        labels[0] = label;
+        labels[1] = offset_x1;
+        labels[2] = offset_y1;
+        labels[3] = offset_x2;
+        labels[4] = offset_y2;
+        save2disk(image, labels, img_name);
+
+        //image transpose and flip vertically
+        cv::Mat img_11;
+        img_11 = img_patch.clone();
+        cv::transpose(img_11, img_11);
+        cv::flip(img_11, img_11, 1);
+        int x_l3 = image.rows - ys_r;
+        int y_l3 = xs_l;
+        int x_r3 = image.rows - ys_l;
+        int y_r3 = xs_r;
+        offset_x1 = (image.rows - yg_r - x_l3) / float(x_r3 - x_l3);
+        offset_y1 = (xg_l - y_l3) / float(y_r3 - y_l3);
+        offset_x2 = (image.rows - yg_l - x_r3) / float(x_r3 - x_l3);
+        offset_y2 = (xg_r - y_r3) / float(y_r3 - y_l3);
+        aug_id++;
+        std::sprintf(name_suffix, "_%02d.png", aug_id);
+        img_name = name_prefix + std::string(name_suffix);
+        labels[0] = label;
+        labels[1] = offset_x1;
+        labels[2] = offset_y1;
+        labels[3] = offset_x2;
+        labels[4] = offset_y2;
+        save2disk(image, labels, img_name);
     }
+}
+
+bool GeneratePatch::transfer_16u28u(cv::Mat &img_16u, cv::Mat &img_8u) {
+    cv::Mat img_src = img_16u.clone();
+    cv::bitwise_and(img_16u, 0x1FFF, img_src);
+    img_src.convertTo(img_8u, CV_32FC1, 0.25);
+}
+
+void GeneratePatch::save2hdf5(const cv::Mat &image, const std::vector<float> label) {
+    ;
+}
+
+void GeneratePatch::save2disk(const cv::Mat &image, const std::vector<float> labels, const std::string &img_name) {
+    cv::imwrite(img_name, image);
+    int label = int(labels[0]);
+    if(label == 0) negative_fid_<< img_name <<"\n";
+    else if(label == -1) part_fid_<< img_name <<" "<<label<<" "<<labels[0]<<" "<<labels[1]<<" "<<labels[2]<<" "<<labels[3]<<"\n";
+    else if(label == 1) positive_fid_<< img_name <<" "<<label<<" "<<labels[0]<<" "<<labels[1]<<" "<<labels[2]<<" "<<labels[3]<<"\n";
 }
