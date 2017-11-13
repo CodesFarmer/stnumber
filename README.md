@@ -9,7 +9,7 @@ To use the program, you should prepare your images and annotations in the follow
 　　　　　　|　　　　　　　　　　　　　　　　　|------xml  
 　　　　　　|  
 　　　　　folder2-----------whateveryouwant--------------------cam0  
-　　　　　　|　　　　　　　　　　　　　　　　　|------xml  	
+　　　　　　|　　　　　　　　　　　　　　　　　|------xml  
 　　　　　　|  
 　          .  
 　　　　　　.  
