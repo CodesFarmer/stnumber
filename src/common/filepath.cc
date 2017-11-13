@@ -31,4 +31,11 @@ namespace FILEPARTS {
             num_lines++;
         return num_lines;
     }
+
+    bool replace_string(std::string &str, const std::string &substr_1, const std::string &substr_2) {
+        size_t start_pos = str.find(substr_1);
+        if(start_pos == std::string::npos) return false;
+        str.replace(start_pos, substr_1.length(), substr_2);
+        return true;
+    }
 }

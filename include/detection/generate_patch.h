@@ -58,7 +58,7 @@ private:
     std::ofstream positive_fid_;
     std::ofstream part_fid_;
     boost::shared_ptr<FaceDetector<float> > detector_;
-    boost::shared_ptr<Mat2H5> transfer_;
+    boost::shared_ptr<Mat2H5> hdf5_writer_;
     SaveMode save_mode_;
 };
 

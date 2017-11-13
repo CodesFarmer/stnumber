@@ -18,6 +18,7 @@
 
 namespace FILEPARTS{
     bool fileparts(std::string, std::string &, std::string &, std::string&);
+    bool replace_string(std::string &, const std::string &, const std::string &);
     int counting_lines(std::string);
 }
 

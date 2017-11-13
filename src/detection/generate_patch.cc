@@ -71,12 +71,19 @@ void GeneratePatch::generate_patches_hdf5(std::string filename, int img_size, st
     data_dimension.push_back(img_size);//width
     //Setup the size of label
     std::vector<int> label_dimension;
-    label_dimension.push_back(2);
-    label_dimension.push_back(4);
+    label_dimension.push_back(1);
+    label_dimension.push_back(5);
     //create the data sets
-    transfer_ = boost::make_shared<Mat2H5>(0.0, 1.0f, 1000);
-    transfer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
-    transfer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
+    std::vector<float> mean_value;
+    std::vector<float> shrink_ratio;
+    mean_value.push_back(23.9459f);
+    mean_value.push_back(474.2429f);
+    shrink_ratio.push_back(0.0125f);
+    shrink_ratio.push_back(0.00083f);
+    hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 1000);
+    hdf5_writer_->create_hdf5(dst_path);
+    hdf5_writer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
+    hdf5_writer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
     save_mode_ = HDF5;
 
     std::string file_path;
@@ -101,14 +108,33 @@ void GeneratePatch::generate_patches_hdf5(std::string filename, int img_size, st
         cur_iter++;
     }
     std::cout<<std::endl;
-    negative_fid_.close();
-    positive_fid_.close();
-    part_fid_.close();
+    hdf5_writer_->close_hdf5();
 }
 
 void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &ojb_bbxes, int img_size, std::string dest_path) {
-    cv::Mat image = cv::imread(img_path, CV_8UC1);
-    if(image.empty()) return;
+    //Read the infrared image
+    //check if the image is exist
+    if(access(img_path.c_str(), F_OK) == -1) return;
+    cv::Mat infrared = cv::imread(img_path, CV_8UC1);
+    if(infrared.empty()) return;
+    //Read the depth image
+    std::string img_depth_path(img_path);
+    FILEPARTS::replace_string(img_depth_path, "cam0", "dep0");
+    FILEPARTS::replace_string(img_depth_path, "jpg", "png");
+    //check if the image is exist
+    if(access(img_depth_path.c_str(), F_OK) == -1) return;
+    cv::Mat depth = cv::imread(img_depth_path, CV_16UC1);
+    if(depth.empty()) return;
+    cv::bitwise_and(depth, 0x1FFF, depth);
+    //Normalize the data into float32
+    infrared.convertTo(infrared, CV_32FC1);
+    depth.convertTo(depth, CV_32FC1);
+    std::vector<cv::Mat> ir_dep;
+    ir_dep.push_back(infrared);
+    ir_dep.push_back(depth);
+    cv::Mat image(infrared.rows, infrared.cols, CV_32FC2);
+    cv::merge(ir_dep, image);
+
     //get the details of file path
     std::string file_path;
     std::string file_name;
@@ -414,7 +440,7 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
     std::string img_name = name_prefix + std::string(name_suffix);
     cv::Mat img_patch = image(rect_sample).clone();
     cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-    cv::imwrite(img_name, img_patch);
+//    cv::imwrite(img_name, img_patch);
     float offset_x1 = (xg_l - xs_l) / (xs_r - xs_l + bias);
     float offset_y1 = (yg_l - ys_l) / (ys_r - ys_l + bias);
     float offset_x2 = (xg_r - xs_r) / (xs_r - xs_l + bias);
@@ -425,7 +451,12 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
     labels[2] = offset_y1;
     labels[3] = offset_x2;
     labels[4] = offset_y2;
-    save2disk(image, labels, img_name);
+    if(save_mode_ == DISK) {
+        save2disk(img_patch, labels, img_name);
+    }
+    else if(save_mode_ == HDF5) {
+        save2hdf5(img_patch, labels);
+    }
 
 
     //Augment the data into 4 directions
@@ -445,13 +476,18 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
         aug_id++;
         std::sprintf(name_suffix, "_%02d.png", aug_id);
         img_name = name_prefix + std::string(name_suffix);
-        cv::imwrite(img_name, img_10);
+//        cv::imwrite(img_name, img_10);
         labels[0] = label;
         labels[1] = offset_x1;
         labels[2] = offset_y1;
         labels[3] = offset_x2;
         labels[4] = offset_y2;
-        save2disk(image, labels, img_name);
+        if(save_mode_ == DISK) {
+            save2disk(img_10, labels, img_name);
+        }
+        else if(save_mode_ == HDF5) {
+            save2hdf5(img_10, labels);
+        }
 
         //image flip vertically
         cv::Mat img_01;
@@ -468,13 +504,18 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
         aug_id++;
         std::sprintf(name_suffix, "_%02d.png", aug_id);
         img_name = name_prefix + std::string(name_suffix);
-        cv::imwrite(img_name, img_01);
+//        cv::imwrite(img_name, img_01);
         labels[0] = label;
         labels[1] = offset_x1;
         labels[2] = offset_y1;
         labels[3] = offset_x2;
         labels[4] = offset_y2;
-        save2disk(image, labels, img_name);
+        if(save_mode_ == DISK) {
+            save2disk(img_01, labels, img_name);
+        }
+        else if(save_mode_ == HDF5) {
+            save2hdf5(img_01, labels);
+        }
 
         //image transpose and flip vertically
         cv::Mat img_11;
@@ -497,22 +538,29 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
         labels[2] = offset_y1;
         labels[3] = offset_x2;
         labels[4] = offset_y2;
-        save2disk(image, labels, img_name);
+        if(save_mode_ == DISK) {
+            save2disk(img_11, labels, img_name);
+        }
+        else if(save_mode_ == HDF5) {
+            save2hdf5(img_11, labels);
+        }
     }
 }
 
-bool GeneratePatch::transfer_16u28u(cv::Mat &img_16u, cv::Mat &img_8u) {
-    cv::Mat img_src = img_16u.clone();
-    cv::bitwise_and(img_16u, 0x1FFF, img_src);
-    img_src.convertTo(img_8u, CV_32FC1, 0.25);
-}
+//bool GeneratePatch::hdf5_writer_16u28u(cv::Mat &img_16u, cv::Mat &img_8u) {
+//    cv::Mat img_src = img_16u.clone();
+//    cv::bitwise_and(img_16u, 0x1FFF, img_src);
+//    img_src.convertTo(img_8u, CV_32FC1, 0.25);
+//}
 
 void GeneratePatch::save2hdf5(const cv::Mat &image, const std::vector<float> label) {
-    ;
+    hdf5_writer_->write_tuples(image, label);
 }
 
 void GeneratePatch::save2disk(const cv::Mat &image, const std::vector<float> labels, const std::string &img_name) {
-    cv::imwrite(img_name, image);
+    cv::Mat img;
+    image.convertTo(img, CV_8UC1);
+    cv::imwrite(img_name, img);
     int label = int(labels[0]);
     if(label == 0) negative_fid_<< img_name <<"\n";
     else if(label == -1) part_fid_<< img_name <<" "<<label<<" "<<labels[0]<<" "<<labels[1]<<" "<<labels[2]<<" "<<labels[3]<<"\n";

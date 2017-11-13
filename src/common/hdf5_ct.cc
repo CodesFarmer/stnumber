@@ -51,6 +51,21 @@ void Mat2H5::create_dataset(DataName data_name, std::vector<int> dimension, std:
             data_dims_.push_back(dims[iter]);
         }
         data_type_ = get_type(data_type);
+        //Adjust the size of mean value and variance
+        if(mean_value_.size() == 1 && dims[1] != 1) {
+            float mean_value_elem = mean_value_[0];
+            mean_value_.resize(dims[1]);
+            for(int iter = 0; iter < int(mean_value_.size()); iter++) {
+                mean_value_[iter] = mean_value_elem;
+            }
+        }
+        if(shrink_ratio_.size() == 1 && dims[1] != 1) {
+            float shrink_ratio__elem = shrink_ratio_[0];
+            shrink_ratio_.resize(dims[1]);
+            for(int iter = 0; iter < int(shrink_ratio_.size()); iter++) {
+                shrink_ratio_[iter] = shrink_ratio__elem;
+            }
+        }
     }
     else if(data_name == LABEL) {
         dataset_label_ = dataset_h5;
@@ -60,6 +75,7 @@ void Mat2H5::create_dataset(DataName data_name, std::vector<int> dimension, std:
         label_type_ = get_type(data_type);
     }
     prop_list.close();
+
     delete [] max_dims;
     delete [] chunk_dims;
     delete dataspace;
@@ -99,6 +115,7 @@ void Mat2H5::write_data2hdf5(const std::vector<cv::Mat> &sources) {
         data_ext_num *= dims_ext[iter];
     }
     float *data_ext = new float[data_ext_num];
+//    std::cout<<"The size of data extended is "<<data_ext_num<<std::endl;
     transfer2array(data_ext, sources);
     dataset_data_->write(data_ext, data_type_, *memspace, *filespace);
     data_offset_ = data_offset_ + hsize_t(sources.size());
@@ -108,9 +125,18 @@ void Mat2H5::write_data2hdf5(const std::vector<cv::Mat> &sources) {
     delete filespace;
 }
 
-void Mat2H5::write_label2hdf5(const float* data_array, int num_samples) {
+void Mat2H5::write_label2hdf5(const std::vector<std::vector<float> > &data_array) {
+    //Check the dimension of label
+    int label_dismension = 1;
+    for(int iter = 1; iter < label_dims_.size(); iter++) {
+        label_dismension = label_dismension * label_dims_[iter];
+    }
+    if(data_array[0].size() != label_dismension) {
+        std::cerr<<"The dimension of label is error..."<<"("<<data_array[0].size()<<" vs "<<label_dismension<<")"<<std::endl;
+        return;
+    }
     //extend data set first
-    label_dims_[0] = label_dims_[0] + hsize_t(num_samples);
+    label_dims_[0] = label_dims_[0] + hsize_t(data_array.size());
     dataset_label_->extend(&label_dims_[0]);
     //extend space
     H5::DataSpace *filespace = new H5::DataSpace(dataset_label_->getSpace());
@@ -119,7 +145,7 @@ void Mat2H5::write_label2hdf5(const float* data_array, int num_samples) {
     for(int iter = 0;iter<num_axes;iter++ ) {
         dims_ext[iter] = label_dims_[iter];
     }
-    dims_ext[0] = hsize_t(num_samples);
+    dims_ext[0] = hsize_t(data_array.size());
     std::vector<hsize_t> offset(num_axes, 0);
     offset[0] = label_offset_;
     filespace->selectHyperslab(H5S_SELECT_SET, &dims_ext[0], &offset[0]);
@@ -130,34 +156,53 @@ void Mat2H5::write_label2hdf5(const float* data_array, int num_samples) {
     for(int iter = 0;iter<num_axes;iter++ ) {
         data_ext_num *= dims_ext[iter];
     }
-    dataset_label_->write(data_array, label_type_, *memspace, *filespace);
-    label_offset_ = label_offset_ + hsize_t(num_samples);
+    if (data_array.size()*data_array[0].size() != data_ext_num) {
+        std::cerr<<"Wrong dimension of label..."<<std::endl;
+        return;
+    }
+    float *data_ext = new float[data_ext_num];
+    for(int iter = 0; iter < int(data_array.size()); iter++) {
+        for(int jter = 0; jter < int(data_array[0].size()); jter++) {
+            data_ext[iter*label_dismension + jter] = data_array[iter][jter];
+        }
+    }
+
+    dataset_label_->write(data_ext, label_type_, *memspace, *filespace);
+    label_offset_ = label_offset_ + hsize_t(data_array.size());
     //free memories
+    delete [] data_ext;
     delete memspace;
     delete filespace;
 }
 
+/*
+ * Transfer the std::vector<cv::Mat> into float32 array
+ * prepared the data for writing into HDF5 file.
+ */
 void Mat2H5::transfer2array(float *dst_array, const std::vector<cv::Mat> &sources) {
     int num_patch = sources.size();
     int num_channels = sources[0].channels();
     int height = sources[0].rows;
     int width = sources[0].cols;
 //    std::printf("h:%d, w:%d, c:%d, n:%d\n", height, width, num_channels, num_patch);
+//    std::printf("The size of sources is %d(m: %d, v: %d)\n", sources.size(), mean_value_.size(),  shrink_ratio_.size());
     for(int iter_n = 0; iter_n<num_patch; iter_n++) {
-//        std::cout<<"The size of image is "<<sources[iter_n].size()<<std::endl;
         cv::Mat img_tmp;
         sources[iter_n].convertTo(img_tmp, CV_32FC1);
-//        std::cout<<"The size of image is "<<img_tmp.size()<<std::endl;
+//        std::cout<<iter_n<<": The size of image is "<<img_tmp.size()<<std::endl;
         for(int iter_c = 0; iter_c<num_channels ; iter_c++) {
             for(int iter_h = 0; iter_h<height; iter_h++) {
                 for(int iter_w = 0; iter_w<width; iter_w++) {
                     int index = ( (iter_n*num_channels + iter_c)*height + iter_h)*width + iter_w;
-                    float elem = (img_tmp.at<float>(iter_h, iter_w, iter_c) - mean_value_)*shrink_ratio_;
+                    float elem = (img_tmp.at<cv::Vec2f>(iter_h, iter_w)[iter_c] - mean_value_[iter_c])*shrink_ratio_[iter_c];
+//                    std::printf("%d %d %d\n", iter_h, iter_w, iter_c);
+//                    float elem = img_tmp.at<cv::Vec2f>(iter_h, iter_w)[iter_c];
                     *(dst_array + index) = elem;
                 }
             }
         }
     }
+//    std::printf("Convert Completed...\n");
 }
 
 H5::PredType Mat2H5::get_type(std::string data_type) {
@@ -168,4 +213,24 @@ H5::PredType Mat2H5::get_type(std::string data_type) {
     if(boost::iequals(data_type, "double")) return H5::PredType::NATIVE_DOUBLE;
     if(boost::iequals(data_type, "uint32")) return H5::PredType::NATIVE_UINT32;
     if(boost::iequals(data_type, "uchar")) return H5::PredType::NATIVE_UCHAR;
+}
+
+void Mat2H5::write_tuples(const cv::Mat & img, const std::vector<float> &label) {
+    //Fisrt of all, write the data into buffers
+    cv::Mat img_tr = img.clone();
+    cv::transpose(img_tr, img_tr);
+    data_buffer_[buffer_index_] = img_tr;
+    label_buffer_[buffer_index_] = label;
+    buffer_index_ ++;
+    //If the buffer is full, then write the into hdf5 file at once
+    if(buffer_index_ == chunk_size_) {
+        write_data2hdf5(data_buffer_);
+        write_label2hdf5(label_buffer_);
+        //Reset the buffers
+        data_buffer_.clear();
+        data_buffer_.resize(chunk_size_);
+        label_buffer_.clear();
+        label_buffer_.resize(chunk_size_);
+        buffer_index_ = 0;
+    }
 }
