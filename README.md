@@ -23,12 +23,12 @@ For example, filelists.txt, like this
 To generate patches, you can run the		
 patchtest filelists.txt path/to/save/generated/samples
 
-We also support write the data into HDF5 database, you can refer the test/test\_hdf5.cc to create your HDF5 file...		
+The tools also support write the data into HDF5 database, you can refer the test/test\_hdf5.cc to create your HDF5 file	...		
 
 
 #### Dependencies		
 * [Caffe](http://caffe.berkeleyvision.org/)		
 * [HDF5](https://support.hdfgroup.org/HDF5/)		
-* [XML2](http://www.grinninglizard.com/tinyxml2/)		
+* [tinyXML2](http://www.grinninglizard.com/tinyxml2/)		
 * [OpenCV](https://opencv.org/)		
 
