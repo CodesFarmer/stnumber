@@ -5,11 +5,11 @@ The program can generate bounding boxes with PNet, RNet, ONet
 
 To use the program, you should prepare your images and annotations in the follow struct		
 
----------------folder1-----------whateveryouwant--------------------cam0  
-　　　　　　|　　　　　　　　　　　　　　　　　|------xml  
-　　　　　　|		　    
-　　　　　folder2-----------whateveryouwant--------------------cam0  
-　　　　　　|　　　　　　　　　　　　　　　　　|------xml  	
+---------------folder1-----------whateveryouwant--------------------cam0		
+　　　　　　|　　　　　　　　　　　　　　　　　|------xml		
+　　　　　　|			
+　　　　　folder2-----------whateveryouwant--------------------cam0		
+　　　　　　|　　　　　　　　　　　　　　　　　|------xml		
 　　　　　　|  
 　　　　　　.			
 　　　　　　.			
