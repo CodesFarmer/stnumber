@@ -11,7 +11,7 @@ To use the program, you should prepare your images and annotations in the follow
 　　　　　folder2-----------whateveryouwant--------------------cam0  
 　　　　　　|　　　　　　　　　　　　　　　　　|------xml  
 　　　　　　|  
-　          .  
+　　　　　　.  
 　　　　　　.  
 　　　　　　.  
 Then a filelists shuold be generated, which include the full path of the folder include the cam0 and xml, and the file name followed.		
