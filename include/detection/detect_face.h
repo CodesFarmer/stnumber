@@ -29,6 +29,7 @@ public:
 		Bbox(int xs, int ys, int xe, int ye):x1(xs), y1(ys), x2(xe), y2(ye){};
 	};
 public:
+    FaceDetector(int channels=1):input_channels_(channels){}
 	int initialize_network(std::map<std::string, std::pair<std::string, std::string> > netpath) {
 		//First of all, we will check if the model and model proto exist
 		std::map<std::string, std::pair<std::string, std::string> >::iterator iter;
@@ -90,20 +91,17 @@ public:
 	};
 	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image) {
 		//Attent the depth has changed...
+        input_channels_ = 2;
 		cv::Mat img(image.rows, image.cols, image.depth());
-        if(image.depth() == CV_32F) std::cout<<"At least is CV_32F "<<image.channels()<<std::endl;
-        if(image.depth() == CV_32FC2) std::cout<<"At least is CV_32FC2"<<std::endl;
 		image.copyTo(img);
-        if(image.depth() == CV_32F) std::cout<<"At least is CV_32F "<<image.channels()<<std::endl;
-        if(image.depth() == CV_32FC2) std::cout<<"At least is CV_32FC2"<<std::endl;
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes;
         all_boxes = propose_bboxes(img, 0.709, 0.7);
 //        display_faces(img, all_boxes, "pnet", false);
-//	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
+	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
 //        display_faces(img, all_boxes, "rnet", false);
-//	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
+	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
 //        display_faces(img, all_boxes, "onet", true);
 //	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
@@ -118,7 +116,7 @@ private:
 			cv::Mat tmp_img = img(facebbx);
 			tmp_img.convertTo(tmp_img, img.depth());
 			cv::resize(tmp_img, img_n, img_n.size(), 0, 0, cv::INTER_AREA);
-			img_vec.push_back(img_n);
+            img_vec.push_back(img_n);
 		}
 		int num_patches = bboxes.size();
 		input_blob.Reshape(num_patches, channels, height, width);
@@ -152,7 +150,7 @@ private:
 		std::vector<Bbox> box_img;
 		std::vector<std::vector<Dtype> > all_bboxes;
 		DetectTools dt_tools;
-        int channels = 2;
+        int channels = input_channels_;
 		for(size_t iter = 0;iter<scales.size();iter++) {
 			int hs = int(std::ceil(float(height*scales[iter])));
 			int ws = int(std::ceil(float(width*scales[iter])));
@@ -187,7 +185,7 @@ private:
 		int num_boxes = img_patches.size();
 		int hs = 24;
 		int ws = 24;
-        int channels = 2;
+        int channels = input_channels_;
 		for(size_t iter = 0;iter<num_boxes;iter++) {
 			box_img.push_back(Bbox(img_patches[iter][4], img_patches[iter][5], img_patches[iter][6], img_patches[iter][7]));
 		}
@@ -239,7 +237,7 @@ private:
 
 		//Transform the Mat file into Blob
 		caffe::Blob<Dtype> input_blob;
-        int channels = 2;
+        int channels = input_channels_;
 		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
 		modify_network_input(ONet_, num_boxes, channels, hs, ws);
 		std::vector<caffe::Blob<Dtype>*> output_data = ONet_->Forward(input_data);
@@ -387,4 +385,5 @@ private:
 	boost::shared_ptr<caffe::Net<Dtype> > ONet_;
 	boost::shared_ptr<caffe::DataTransformer<Dtype> > transformer_;
 	boost::shared_ptr<cv::Mat> img;
+    int input_channels_;
 };

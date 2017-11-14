@@ -40,6 +40,7 @@ int main(int argc, char * argv[]) {
         input_fid>>img_name;
         cv::Mat image_ir = cv::imread(img_name, CV_8UC1);
         FILEPARTS::replace_string(img_name, "cam0", "dep0");
+//        std::cout<<img_name<<std::endl;
         cv::Mat image_dp = cv::imread(img_name, CV_16UC1);
         cv::bitwise_and(image_dp, 0x1FFF, image_dp);
         cv::Mat img_ir_float(image_ir.size(), CV_32FC1);
@@ -55,6 +56,7 @@ int main(int argc, char * argv[]) {
         image_ir_dp.push_back(img_dp_float);
         cv::Mat image(image_ir.size(), CV_32FC2);
         cv::merge(image_ir_dp, image);
+//        std::cout<<image.size()<<" "<<image.channels()<<std::endl;
 
         gettimeofday(&formertime, NULL);
         cv::Rect hand_bbx = get_hand_bbx(image);

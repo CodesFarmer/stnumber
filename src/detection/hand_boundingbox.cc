@@ -20,7 +20,7 @@ int initialize_detector(const std::map<std::string, std::pair<std::string, std::
 cv::Rect get_hand_bbx(const cv::Mat &image) {
     cv::Mat tmpimg = image.clone();
     std::vector<std::vector<float> > hand_bbx = detector->detect_face(tmpimg);
-    std::cout<<"The size of bounding box is "<<hand_bbx.size()<<std::endl;
+//    std::cout<<"The size of bounding box is "<<hand_bbx.size()<<std::endl;
     cv::Rect hand_rect(-1, -1, -1, -1);
     if(hand_bbx.size() == 0) return hand_rect;
     int x_l = std::max( hand_bbx[0][0], 0.0f );
