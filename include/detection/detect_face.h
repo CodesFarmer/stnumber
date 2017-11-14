@@ -89,16 +89,21 @@ public:
 		transformer_ = tmp_transform;
 	};
 	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image) {
-		cv::Mat img(image.rows, image.cols, CV_8UC1);
+		//Attent the depth has changed...
+		cv::Mat img(image.rows, image.cols, image.depth());
+        if(image.depth() == CV_32F) std::cout<<"At least is CV_32F "<<image.channels()<<std::endl;
+        if(image.depth() == CV_32FC2) std::cout<<"At least is CV_32FC2"<<std::endl;
 		image.copyTo(img);
+        if(image.depth() == CV_32F) std::cout<<"At least is CV_32F "<<image.channels()<<std::endl;
+        if(image.depth() == CV_32FC2) std::cout<<"At least is CV_32FC2"<<std::endl;
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes;
         all_boxes = propose_bboxes(img, 0.709, 0.7);
 //        display_faces(img, all_boxes, "pnet", false);
-	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
+//	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
 //        display_faces(img, all_boxes, "rnet", false);
-	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
+//	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
 //        display_faces(img, all_boxes, "onet", true);
 //	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
@@ -147,7 +152,7 @@ private:
 		std::vector<Bbox> box_img;
 		std::vector<std::vector<Dtype> > all_bboxes;
 		DetectTools dt_tools;
-        int channels = 1;
+        int channels = 2;
 		for(size_t iter = 0;iter<scales.size();iter++) {
 			int hs = int(std::ceil(float(height*scales[iter])));
 			int ws = int(std::ceil(float(width*scales[iter])));
@@ -182,7 +187,7 @@ private:
 		int num_boxes = img_patches.size();
 		int hs = 24;
 		int ws = 24;
-        int channels = 1;
+        int channels = 2;
 		for(size_t iter = 0;iter<num_boxes;iter++) {
 			box_img.push_back(Bbox(img_patches[iter][4], img_patches[iter][5], img_patches[iter][6], img_patches[iter][7]));
 		}
@@ -234,7 +239,7 @@ private:
 
 		//Transform the Mat file into Blob
 		caffe::Blob<Dtype> input_blob;
-        int channels = 1;
+        int channels = 2;
 		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
 		modify_network_input(ONet_, num_boxes, channels, hs, ws);
 		std::vector<caffe::Blob<Dtype>*> output_data = ONet_->Forward(input_data);

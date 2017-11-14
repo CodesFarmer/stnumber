@@ -110,7 +110,11 @@ void GeneratePatch::generate_patches_hdf5(std::string filename, int img_size, st
     std::cout<<std::endl;
     hdf5_writer_->close_hdf5();
 }
-
+/*
+ * Generate patches according to the ground truth of image
+ * including negative samples
+ * including positive and partial samples
+ * */
 void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &ojb_bbxes, int img_size, std::string dest_path) {
     //Read the infrared image
     //check if the image is exist
@@ -126,14 +130,15 @@ void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &
     cv::Mat depth = cv::imread(img_depth_path, CV_16UC1);
     if(depth.empty()) return;
     cv::bitwise_and(depth, 0x1FFF, depth);
-    //Normalize the data into float32
-    infrared.convertTo(infrared, CV_32FC1);
-    depth.convertTo(depth, CV_32FC1);
-    std::vector<cv::Mat> ir_dep;
-    ir_dep.push_back(infrared);
-    ir_dep.push_back(depth);
+//    //Normalize the data into float32
+//    infrared.convertTo(infrared, CV_32FC1);
+//    depth.convertTo(depth, CV_32FC1);
+//    std::vector<cv::Mat> ir_dep;
+//    ir_dep.push_back(infrared);
+//    ir_dep.push_back(depth);
     cv::Mat image(infrared.rows, infrared.cols, CV_32FC2);
-    cv::merge(ir_dep, image);
+    merge_image(infrared, depth, image);
+//    cv::merge(ir_dep, image);
 
     //get the details of file path
     std::string file_path;
@@ -565,4 +570,15 @@ void GeneratePatch::save2disk(const cv::Mat &image, const std::vector<float> lab
     if(label == 0) negative_fid_<< img_name <<"\n";
     else if(label == -1) part_fid_<< img_name <<" "<<label<<" "<<labels[0]<<" "<<labels[1]<<" "<<labels[2]<<" "<<labels[3]<<"\n";
     else if(label == 1) positive_fid_<< img_name <<" "<<label<<" "<<labels[0]<<" "<<labels[1]<<" "<<labels[2]<<" "<<labels[3]<<"\n";
+}
+
+void GeneratePatch::merge_image(const cv::Mat & img_8u, const cv::Mat & img_16u, cv::Mat &image) {
+    //Normalize the data into float32
+    img_8u.convertTo(img_8u, CV_32FC1);
+    img_16u.convertTo(img_16u, CV_32FC1);
+    std::vector<cv::Mat> ir_dep;
+    ir_dep.push_back(img_8u);
+    ir_dep.push_back(img_16u);
+//    cv::Mat image(img_8u.rows, img_8u.cols, CV_32FC2);
+    cv::merge(ir_dep, image);
 }

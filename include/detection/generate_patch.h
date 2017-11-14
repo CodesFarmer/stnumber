@@ -39,6 +39,7 @@ public:
                                std::string dst_path);//Similar to above
     void generate_patches_cnn(std::string, int, std::string);
     void initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &, const float, const std::vector<float>);
+    void merge_image(const cv::Mat&, const cv::Mat&, cv::Mat &);
 private:
     void create_patches(std::string, std::vector<cv::Rect> &, int, std::string);
     void create_negative_samples(cv::Mat &, std::vector<cv::Rect> &, int, std::string);

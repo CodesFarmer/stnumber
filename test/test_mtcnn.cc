@@ -12,14 +12,14 @@ int main(int argc, char * argv[]) {
     std::string imgs_path(argv[1]);
     std::map<std::string, std::pair<std::string, std::string> > modelpath;
     std::string models_dir = "../data/model/";
-    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_200000.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
+    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_111k.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
     modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_iter_20000.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
     modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_20000.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
 //    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
 //    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
 //    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
-    std::vector<float> mean_value(1, 17.2196);
-    float img2net_scale = 0.0125;
+    std::vector<float> mean_value(2, 0.0f);
+    float img2net_scale = 1.0f;
     FaceDetector<float>* detector = new FaceDetector<float>();
     if(detector->initialize_network(modelpath)<0) {
         return -1;
@@ -38,7 +38,23 @@ int main(int argc, char * argv[]) {
     initialize_detector(modelpath);
     while(!input_fid.eof() && jter <1000) {
         input_fid>>img_name;
-        cv::Mat image = cv::imread(img_name, CV_8UC1);
+        cv::Mat image_ir = cv::imread(img_name, CV_8UC1);
+        FILEPARTS::replace_string(img_name, "cam0", "dep0");
+        cv::Mat image_dp = cv::imread(img_name, CV_16UC1);
+        cv::bitwise_and(image_dp, 0x1FFF, image_dp);
+        cv::Mat img_ir_float(image_ir.size(), CV_32FC1);
+        cv::Mat img_dp_float(image_ir.size(), CV_32FC1);
+//        image_ir.convertTo(img_ir_float, CV_32FC1, 0.0125f, -23.9459f*0.0125f);
+//        image_dp.convertTo(img_dp_float, CV_32FC1, 0.00083f, -474.2429f*0.00083f);
+        image_ir.convertTo(img_ir_float, CV_32FC1);
+        img_ir_float = (img_ir_float - 23.9459f)*0.0125f;
+        image_dp.convertTo(img_dp_float, CV_32FC1);
+        img_dp_float = (img_dp_float - 474.2429f)*0.00083f;
+        std::vector<cv::Mat> image_ir_dp;
+        image_ir_dp.push_back(img_ir_float);
+        image_ir_dp.push_back(img_dp_float);
+        cv::Mat image(image_ir.size(), CV_32FC2);
+        cv::merge(image_ir_dp, image);
 
         gettimeofday(&formertime, NULL);
         cv::Rect hand_bbx = get_hand_bbx(image);
@@ -50,8 +66,8 @@ int main(int argc, char * argv[]) {
         jter++;
 
         //Display the image
-        cv::rectangle(image, hand_bbx, cv::Scalar(255));
-        cv::imshow("BBX", image);
+        cv::rectangle(image_ir, hand_bbx, cv::Scalar(255));
+        cv::imshow("BBX", image_ir);
         cv::waitKey(0);
     }
     std::cout<<"The mean time cost: "<<sum_time/100.0<<std::endl;
