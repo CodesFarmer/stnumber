@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include <ctime>
+#include <stdexcept>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
@@ -31,13 +32,10 @@ public:
 public:
     GeneratePatch(int num_neg = 50, int num_pos = 25, float neg_iou = 0.3f, float prt_iou = 0.4f, float pos_iou = 0.65f):
             num_negative_(num_neg), num_positive_(num_pos), neg_IOU_(neg_iou), part_IOU_(prt_iou), pos_IOU_(pos_iou){};
-    void generate_patches_disk(std::string filename,
+    void generate_patches_crop(std::string filename,
                          int img_size,
-                         std::string dst_path);//Similar to above
-    void generate_patches_hdf5(std::string filename,
-                               int img_size,
-                               std::string dst_path);//Similar to above
-    void generate_patches_cnn(std::string, int, std::string);
+                         std::string dst_path, SaveMode);//Similar to above
+    void generate_patches_cnn(std::string, int, std::string, SaveMode);
     void initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &, const float, const std::vector<float>);
 //    void merge_image(const cv::Mat&, const cv::Mat&, cv::Mat &);
     void merge_image(cv::Mat&, cv::Mat&, cv::Mat &);
@@ -50,6 +48,7 @@ private:
 //    bool transfer_16u28u(cv::Mat &img_16u, cv::Mat &img_8u);
     void save2hdf5(const cv::Mat & image, const std::vector<float> label);
     void save2disk(const cv::Mat & image, const std::vector<float> label, const std::string &);
+    void create_destination(const std::string&, int, SaveMode);
 private:
     int num_negative_;//How much negative samples we cropping from image
     int num_positive_;//Similar to above

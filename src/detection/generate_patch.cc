@@ -1,34 +1,11 @@
 #include "generate_patch.h"
+//#define USE_DEPTH
 
-void GeneratePatch::generate_patches_disk(std::string filename, int img_size, std::string dst_path) {
+void GeneratePatch::generate_patches_crop(std::string filename, int img_size, std::string dst_path, SaveMode save_mode) {
     int length = FILEPARTS::counting_lines(filename);
     std::ifstream input_fid;
     input_fid.open(filename.c_str(), std::ios::in);
-    std::system(std::string("mkdir -p " + dst_path + "/negative/").c_str());
-    std::system(std::string("mkdir -p " + dst_path + "/positive/").c_str());
-    std::system(std::string("mkdir -p " + dst_path + "/part/").c_str());
-
-    //create file lists
-    if(access(std::string(dst_path + "/negative.txt").c_str(), F_OK) == -1){
-        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary);
-    }
-    else {
-        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
-    }
-    if(access(std::string(dst_path + "/positive.txt").c_str(), F_OK) == -1){
-        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary);
-    }
-    else {
-        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
-    }
-    if(access(std::string(dst_path + "/part.txt").c_str(), F_OK) == -1){
-        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary);
-    }
-    else {
-        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
-    }
-
-    save_mode_ = DISK;
+    create_destination(dst_path, img_size, save_mode);
 
     std::string file_path;
     std::string img_name;
@@ -52,67 +29,14 @@ void GeneratePatch::generate_patches_disk(std::string filename, int img_size, st
         cur_iter++;
     }
     std::cout<<std::endl;
-    negative_fid_.close();
-    positive_fid_.close();
-    part_fid_.close();
-}
-
-void GeneratePatch::generate_patches_hdf5(std::string filename, int img_size, std::string dst_path) {
-    int length = FILEPARTS::counting_lines(filename);
-    std::ifstream input_fid;
-    input_fid.open(filename.c_str(), std::ios::in);
-
-    //create HDF5 file
-    //Setup the dimension of input data
-    std::vector<int> data_dimension;
-    data_dimension.push_back(1000);//num of batches
-    data_dimension.push_back(2);//channels
-    data_dimension.push_back(img_size);//height
-    data_dimension.push_back(img_size);//width
-    //Setup the size of label
-    std::vector<int> label_dimension;
-    label_dimension.push_back(1);
-    label_dimension.push_back(5);
-    //create the data sets
-    std::vector<float> mean_value;
-    std::vector<float> shrink_ratio;
-//    mean_value.push_back(23.9459f);
-//    mean_value.push_back(474.2429f);
-//    shrink_ratio.push_back(0.0125f);
-//    shrink_ratio.push_back(0.00083f);
-    mean_value.push_back(0.0f);
-    mean_value.push_back(0.0f);
-    shrink_ratio.push_back(0.0125f);
-    shrink_ratio.push_back(0.00083f);
-    hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 2);
-    hdf5_writer_->create_hdf5(dst_path);
-    hdf5_writer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
-    hdf5_writer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
-    save_mode_ = HDF5;
-
-    std::string file_path;
-    std::string img_name;
-    std::string img_path;
-    std::vector<cv::Rect> bounding_boxes;
-    int cur_iter = 0;
-    while(!input_fid.eof()) {
-        input_fid>>file_path;
-        input_fid>>img_name;
-        bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
-        img_path = file_path + "/cam0/" + img_name + ".png";
-        if(access(img_path.c_str(), F_OK) == -1) {
-            img_path = file_path + "/cam0/" + img_name + ".jpg";
-        }
-
-        if(bounding_boxes.size() > 0) {
-            create_patches(img_path, bounding_boxes, img_size, dst_path);
-        }
-        std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
-                  << std::flush;
-        cur_iter++;
+    if(save_mode_ == DISK) {
+        negative_fid_.close();
+        positive_fid_.close();
+        part_fid_.close();
     }
-    std::cout<<std::endl;
-    hdf5_writer_->close_hdf5();
+    else if(save_mode_ == HDF5) {
+        hdf5_writer_->close_hdf5();
+    }
 }
 /*
  * Generate patches according to the ground truth of image
@@ -125,6 +49,8 @@ void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &
     if(access(img_path.c_str(), F_OK) == -1) return;
     cv::Mat infrared = cv::imread(img_path, CV_8UC1);
     if(infrared.empty()) return;
+    cv::Mat image = infrared.clone();
+#ifdef USE_DEPTH
     //Read the depth image
     std::string img_depth_path(img_path);
     FILEPARTS::replace_string(img_depth_path, "cam0", "dep0");
@@ -134,18 +60,9 @@ void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &
     cv::Mat depth = cv::imread(img_depth_path, CV_16UC1);
     if(depth.empty()) return;
     cv::bitwise_and(depth, 0x1FFF, depth);
-//    //Normalize the data into float32
-//    infrared.convertTo(infrared, CV_32FC1);
-//    depth.convertTo(depth, CV_32FC1);
-//    std::vector<cv::Mat> ir_dep;
-//    ir_dep.push_back(infrared);
-//    ir_dep.push_back(depth);
-    std::cout<<"Under generate patches 0..."<<std::endl;
-    cv::Mat image(infrared.rows, infrared.cols, CV_32FC2);
-    std::cout<<"Under generate patches 1..."<<std::endl;
+    //Normalize the data into float32 and merge depth and irfrared into one image
     merge_image(infrared, depth, image);
-    std::cout<<"Under generate patches 2..."<<std::endl;
-//    cv::merge(ir_dep, image);
+#endif //USE_DEPTH
 
     //get the details of file path
     std::string file_path;
@@ -264,18 +181,10 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
             int index = 0;
             float patch_iou = GEOMETRYTOOLS::regionsIOU(obj_bbxes, patch_bbx, index);
 
-            float offset_x1 = (obj_bbxes[iter].x - x_l)/float(patch_size);
-            float offset_x2 = (obj_bbxes[iter].y - y_l)/float(patch_size);
-            float offset_y1 = (obj_bbxes[iter].x + width - x_r)/float(patch_size);
-            float offset_y2 = (obj_bbxes[iter].y + height - y_r)/float(patch_size);
             if(patch_iou >= pos_IOU_) {
                 char name_suffix[32];
                 std::sprintf(name_suffix, "_%03d", posi_num);
                 std::string img_name = dst_posi + std::string(name_suffix);
-//                cv::Mat img_patch = img(patch_bbx).clone();
-//                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-//                cv::imwrite(img_name, img_patch);
-//                positive_fid_<<img_name<<" 1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
                 write_to_disk(img, img_size, img_name, 1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), obj_bbxes[iter]);
                 posi_num++;
                 jter++;
@@ -284,10 +193,6 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
                 char name_suffix[32];
                 std::sprintf(name_suffix, "_%03d", part_num);
                 std::string img_name = dst_part + std::string(name_suffix);
-//                cv::Mat img_patch = img(patch_bbx).clone();
-//                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-//                cv::imwrite(img_name, img_patch);
-//                part_fid_<<img_name<<" -1 "<<offset_x1<<" "<<offset_x2<<" "<<offset_y1<<" "<<offset_y2<<"\n";
                 write_to_disk(img, img_size, img_name, -1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), obj_bbxes[iter]);
                 part_num++;
                 jter++;
@@ -308,33 +213,12 @@ void GeneratePatch::initialize_detector(const std::map<std::string, std::pair<st
  * Generate patches with MTCNN
  * The function forward an image through mtcnn with and get the patches generated from mtcnn
  */
-void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std::string dst_path) {
+void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std::string dst_path, SaveMode save_mode) {
     int length = FILEPARTS::counting_lines(filename);
     std::ifstream input_fid;
     input_fid.open(filename.c_str(), std::ios::in);
-    std::system(std::string("mkdir -p " + dst_path + "/negative/").c_str());
-    std::system(std::string("mkdir -p " + dst_path + "/positive/").c_str());
-    std::system(std::string("mkdir -p " + dst_path + "/part/").c_str());
 
-    //create file lists
-    if(access(std::string(dst_path + "/negative.txt").c_str(), F_OK) == -1){
-        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary);
-    }
-    else {
-        negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
-    }
-    if(access(std::string(dst_path + "/positive.txt").c_str(), F_OK) == -1){
-        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary);
-    }
-    else {
-        positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
-    }
-    if(access(std::string(dst_path + "/part.txt").c_str(), F_OK) == -1){
-        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary);
-    }
-    else {
-        part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
-    }
+    create_destination(dst_path, img_size, save_mode);
 
     std::string file_path;
     std::string img_name;
@@ -346,13 +230,24 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
         input_fid>>img_name;
         bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
         img_path = file_path + "/cam0/" + img_name + ".png";
+
         if(access(img_path.c_str(), F_OK) == -1) {
             img_path = file_path + "/cam0/" + img_name + ".jpg";
         }
-        cv::Mat image;
 //        img_path = "/home/slam/DepthGesture/stnumber/build/1509071930041880334.png";
 //        bounding_boxes = get_bounding_boxes("/home/slam/DepthGesture/stnumber/build/1509071930041880334.xml");
-        image = cv::imread(img_path, CV_8UC1);
+        //Read the infrared image at first
+        cv::Mat image_ir = cv::imread(img_path, CV_8UC1);
+        cv::Mat image = image_ir.clone();
+#ifdef USE_DEPTH
+        //Read the depth image
+        FILEPARTS::replace_string(img_path, "cam0", "dep0");
+        FILEPARTS::replace_string(img_path, "jpg", "png");
+        cv::Mat image_dp = cv::imread(img_path, CV_16UC1);
+        cv::bitwise_and(image_dp, 0x1FFF, image_dp);
+        merge_image(image_ir, image_dp, image);
+#endif //USE_DEPTH
+
         std::vector<std::vector<float> > hand_bbx =  detector_->detect_face(image);
         //get the details of file path
         std::string file_path;
@@ -377,36 +272,23 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
             //if iou is under neg_IOU_, then this is a negative sample
             if(patch_iou < neg_IOU_) {
                 char name_suffix[32];
-                std::sprintf(name_suffix, "_%03d.png", bbx_id);
+                std::sprintf(name_suffix, "_%03d", bbx_id);
                 std::string img_name = negative_path + std::string(name_suffix);
-                cv::Mat img_patch = image(hand_rect).clone();
-                cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-                cv::imwrite(img_name, img_patch);
-                negative_fid_<<img_name<<" 0\n";
+                write_to_disk(image, img_size, img_name, 0, true, hand_rect, hand_rect);
             }
             else if(patch_iou >= part_IOU_) {
-                float offset_x1 = (bounding_boxes[index].x - x_l) / float(x_r - x_l);
-                float offset_y1 = (bounding_boxes[index].y - y_l) / float(y_r - y_l);
-                float offset_x2 = (bounding_boxes[index].x + bounding_boxes[index].width - x_r) / float(x_r - x_l);
-                float offset_y2 = (bounding_boxes[index].y + bounding_boxes[index].height - y_r) / float(y_r - y_l);
                 //if it is a positive sample
                 if(patch_iou >= pos_IOU_) {
                     char name_suffix[32];
-                    std::sprintf(name_suffix, "_%03d.png", bbx_id);
+                    std::sprintf(name_suffix, "_%03d", bbx_id);
                     std::string img_name = positive_path_posi + std::string(name_suffix);
-                    cv::Mat img_patch = image(hand_rect).clone();
-                    cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-                    cv::imwrite(img_name, img_patch);
-                    positive_fid_<<img_name<<" 1 "<<offset_x1<<" "<<offset_y1<<" "<<offset_x2<<" "<<offset_y2<<"\n";
+                    write_to_disk(image, img_size, img_name, 1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), bounding_boxes[index]);
                 }//if it is a part appearance sample
                 else if(patch_iou >= part_IOU_) {
                     char name_suffix[32];
-                    std::sprintf(name_suffix, "_%03d.png", bbx_id);
+                    std::sprintf(name_suffix, "_%03d", bbx_id);
                     std::string img_name = positive_path_part + std::string(name_suffix);
-                    cv::Mat img_patch = image(hand_rect).clone();
-                    cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-                    cv::imwrite(img_name, img_patch);
-                    part_fid_<<img_name<<" -1 "<<offset_x1<<" "<<offset_y1<<" "<<offset_x2<<" "<<offset_y2<<"\n";
+                    write_to_disk(image, img_size, img_name, 1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), bounding_boxes[index]);
                 }
             }
         }
@@ -419,9 +301,14 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
         cur_iter++;
     }
     std::cout<<std::endl;
-    negative_fid_.close();
-    positive_fid_.close();
-    part_fid_.close();
+    if(save_mode_ == DISK) {
+        negative_fid_.close();
+        positive_fid_.close();
+        part_fid_.close();
+    }
+    else if(save_mode_ == HDF5) {
+        hdf5_writer_->close_hdf5();
+    }
 }
 
 /*
@@ -584,12 +471,76 @@ void GeneratePatch::merge_image(cv::Mat & img_8u, cv::Mat & img_16u, cv::Mat &im
     //Normalize the data into float32
     img_8u.convertTo(img_8u, CV_32FC1);
     img_16u.convertTo(img_16u, CV_32FC1);
-    std::cout<<"Under merge_image 0..."<<std::endl;
     std::vector<cv::Mat> ir_dep;
     ir_dep.push_back(img_8u);
     ir_dep.push_back(img_16u);
 //    cv::Mat image(img_8u.rows, img_8u.cols, CV_32FC2);
-    std::cout<<"Under merge_image 1..."<<std::endl;
+    image.convertTo(image, CV_32FC2);
     cv::merge(ir_dep, image);
-    std::cout<<"Under merge_image 2..."<<std::endl;
+}
+
+void GeneratePatch::create_destination(const std::string &dst_path, int img_size, SaveMode save_mode) {
+    if(save_mode != DISK && save_mode != HDF5) {
+        throw std::invalid_argument("Wrong save mode(GeneratePatch::DISK or GeneratePatch::HDF5)");
+    }
+    save_mode_ = save_mode;
+    //if the data will be written into disk, create the input handle
+    if(save_mode_ == DISK) {
+
+        std::system(std::string("mkdir -p " + dst_path + "/negative/").c_str());
+        std::system(std::string("mkdir -p " + dst_path + "/positive/").c_str());
+        std::system(std::string("mkdir -p " + dst_path + "/part/").c_str());
+
+        //create file lists
+        if(access(std::string(dst_path + "/negative.txt").c_str(), F_OK) == -1){
+            negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary);
+        }
+        else {
+            negative_fid_.open(std::string(dst_path + "/negative.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+        }
+        if(access(std::string(dst_path + "/positive.txt").c_str(), F_OK) == -1){
+            positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary);
+        }
+        else {
+            positive_fid_.open(std::string(dst_path + "/positive.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+        }
+        if(access(std::string(dst_path + "/part.txt").c_str(), F_OK) == -1){
+            part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary);
+        }
+        else {
+            part_fid_.open(std::string(dst_path + "/part.txt").c_str(), std::ios::out|std::ios::binary|std::ios::app);
+        }
+    }
+    else if(save_mode_ == HDF5) {
+        //create HDF5 file
+        //Setup the dimension of input data
+        std::vector<int> data_dimension;
+        data_dimension.push_back(1000);//num of batches
+        data_dimension.push_back(1);//channels
+#ifdef USE_DEPTH
+        data_dimension[data_dimension.size()-1] = 2;//channels
+#endif //USE_DEPTH
+        data_dimension.push_back(img_size);//height
+        data_dimension.push_back(img_size);//width
+        //Setup the size of label
+        std::vector<int> label_dimension;
+        label_dimension.push_back(1);
+        label_dimension.push_back(5);
+        //create the data sets
+        std::vector<float> mean_value;
+        std::vector<float> shrink_ratio;
+//    mean_value.push_back(23.9459f);
+//    mean_value.push_back(474.2429f);
+//    shrink_ratio.push_back(0.0125f);
+//    shrink_ratio.push_back(0.00083f);
+        mean_value.push_back(0.0f);
+        mean_value.push_back(0.0f);
+        shrink_ratio.push_back(0.0125f);
+        shrink_ratio.push_back(0.00083f);
+        hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 2);
+        hdf5_writer_->create_hdf5(dst_path);
+        hdf5_writer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
+        hdf5_writer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
+        save_mode_ = HDF5;
+    }
 }

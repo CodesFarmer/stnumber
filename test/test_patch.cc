@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
     std::string dest_path(argv[2]);
     boost::shared_ptr<GeneratePatch> generator(new GeneratePatch(20, 10));
     std::cout<<"Test 1... "<<std::endl;
-    generator->generate_patches_hdf5(file_lists, 12, dest_path);
+    generator->generate_patches_crop(file_lists, 12, dest_path, GeneratePatch::HDF5);
 
 //    assert(argc == 3);
 //    std::string file_lists(argv[1]);
