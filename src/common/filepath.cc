@@ -38,4 +38,15 @@ namespace FILEPARTS {
         str.replace(start_pos, substr_1.length(), substr_2);
         return true;
     }
+
+    bool fullfile(std::string &file_path, int nargs, ...) {
+        va_list ap;
+        va_start(ap, nargs);
+        file_path = va_arg(ap, std::string);
+        for(int i = 1; i<nargs; i++) {
+            file_path = file_path + "/" + va_arg(ap, std::string);
+        }
+        va_end(ap);
+        replace_string(file_path, "//", "/");
+    }
 }

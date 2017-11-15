@@ -60,6 +60,15 @@ int main(int argc, char * argv[]) {
         cv::transpose(image_ir, image_ir);
         cv::imshow("BBX", image_ir);
         cv::waitKey(0);
+        //Write the image
+        std::string file_path;
+        std::string file_name;
+        std::string file_ext;
+        FILEPARTS::fileparts(img_name, file_path, file_name, file_ext);
+        std::string dest_path;
+        FILEPARTS::fullfile(dest_path, 2, std::string("data"), file_name+"."+file_ext);
+        std::cout<<dest_path<<std::endl;
+        cv::imwrite(dest_path, image_ir);
     }
     std::cout<<"The mean time cost: "<<sum_time/100.0<<std::endl;
 

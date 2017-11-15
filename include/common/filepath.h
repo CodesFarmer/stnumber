@@ -15,11 +15,13 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <stdarg.h>
 
 namespace FILEPARTS{
     bool fileparts(std::string, std::string &, std::string &, std::string&);
     bool replace_string(std::string &, const std::string &, const std::string &);
     int counting_lines(std::string);
+    bool fullfile(std::string &, int nargs, ...);
 }
 
 #endif //PROJECT_FILEPATH_H
