@@ -1,5 +1,5 @@
-set(CaffePath "/home/lowell/softwares/caffe")
-#set(CaffePath "$ENV{UNTOUCH_LOCAL}/Thirdparty/free/x86_64-linux/caffe")
+#set(CaffePath "/home/lowell/softwares/caffe")
+set(CaffePath "$ENV{UNTOUCH_LOCAL}/Thirdparty/free/x86_64-linux/caffe")
 LIST(APPEND DEST_INCLUDE_DIRS "${CaffePath}/include")
 #set(CaffePath "/home/slam/FaceUntouch/caffe-master")
 LIST(APPEND ALL_INCLUDE_DIRS "${CaffePath}/include")

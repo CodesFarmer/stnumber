@@ -76,11 +76,15 @@ void GeneratePatch::generate_patches_hdf5(std::string filename, int img_size, st
     //create the data sets
     std::vector<float> mean_value;
     std::vector<float> shrink_ratio;
-    mean_value.push_back(23.9459f);
-    mean_value.push_back(474.2429f);
+//    mean_value.push_back(23.9459f);
+//    mean_value.push_back(474.2429f);
+//    shrink_ratio.push_back(0.0125f);
+//    shrink_ratio.push_back(0.00083f);
+    mean_value.push_back(0.0f);
+    mean_value.push_back(0.0f);
     shrink_ratio.push_back(0.0125f);
     shrink_ratio.push_back(0.00083f);
-    hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 1000);
+    hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 2);
     hdf5_writer_->create_hdf5(dst_path);
     hdf5_writer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
     hdf5_writer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
@@ -136,8 +140,11 @@ void GeneratePatch::create_patches(std::string img_path, std::vector<cv::Rect> &
 //    std::vector<cv::Mat> ir_dep;
 //    ir_dep.push_back(infrared);
 //    ir_dep.push_back(depth);
+    std::cout<<"Under generate patches 0..."<<std::endl;
     cv::Mat image(infrared.rows, infrared.cols, CV_32FC2);
+    std::cout<<"Under generate patches 1..."<<std::endl;
     merge_image(infrared, depth, image);
+    std::cout<<"Under generate patches 2..."<<std::endl;
 //    cv::merge(ir_dep, image);
 
     //get the details of file path
@@ -572,13 +579,17 @@ void GeneratePatch::save2disk(const cv::Mat &image, const std::vector<float> lab
     else if(label == 1) positive_fid_<< img_name <<" "<<label<<" "<<labels[0]<<" "<<labels[1]<<" "<<labels[2]<<" "<<labels[3]<<"\n";
 }
 
-void GeneratePatch::merge_image(const cv::Mat & img_8u, const cv::Mat & img_16u, cv::Mat &image) {
+//void GeneratePatch::merge_image(const cv::Mat & img_8u, const cv::Mat & img_16u, cv::Mat &image) {
+void GeneratePatch::merge_image(cv::Mat & img_8u, cv::Mat & img_16u, cv::Mat &image) {
     //Normalize the data into float32
     img_8u.convertTo(img_8u, CV_32FC1);
     img_16u.convertTo(img_16u, CV_32FC1);
+    std::cout<<"Under merge_image 0..."<<std::endl;
     std::vector<cv::Mat> ir_dep;
     ir_dep.push_back(img_8u);
     ir_dep.push_back(img_16u);
 //    cv::Mat image(img_8u.rows, img_8u.cols, CV_32FC2);
+    std::cout<<"Under merge_image 1..."<<std::endl;
     cv::merge(ir_dep, image);
+    std::cout<<"Under merge_image 2..."<<std::endl;
 }

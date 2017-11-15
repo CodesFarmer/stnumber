@@ -198,8 +198,11 @@ void Mat2H5::transfer2array(float *dst_array, const std::vector<cv::Mat> &source
 //                    std::printf("%d %d %d\n", iter_h, iter_w, iter_c);
 //                    float elem = img_tmp.at<cv::Vec2f>(iter_h, iter_w)[iter_c];
                     *(dst_array + index) = elem;
+                    if(iter_c == 1) std::printf("%f ", elem);
                 }
+                if(iter_c == 1) std::printf("\n");
             }
+            if(iter_c == 1) std::printf("=====================================================================================\n");
         }
     }
 //    std::printf("Convert Completed...\n");

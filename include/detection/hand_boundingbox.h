@@ -15,6 +15,7 @@
 extern "C" {
     int initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &);
     cv::Rect get_hand_bbx(const cv::Mat &);
+    cv::Rect get_hand_bbx_irdp(const cv::Mat &, const cv::Mat &);
 };
 
 #endif //PROJECT_HAND_BOUNDINGBOX_H

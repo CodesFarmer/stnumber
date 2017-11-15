@@ -91,19 +91,19 @@ public:
 	};
 	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image) {
 		//Attent the depth has changed...
-        input_channels_ = 2;
+//        input_channels_ = 2;
 		cv::Mat img(image.rows, image.cols, image.depth());
 		image.copyTo(img);
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 	  	std::vector<std::vector<Dtype> > all_boxes;
         all_boxes = propose_bboxes(img, 0.709, 0.7);
-//        display_faces(img, all_boxes, "pnet", false);
-	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
-//        display_faces(img, all_boxes, "rnet", false);
-	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
-//        display_faces(img, all_boxes, "onet", true);
-//	  	// return alignment_faces(image, all_boxes);
+////        display_faces(img, all_boxes, "pnet", false);
+//	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
+////        display_faces(img, all_boxes, "rnet", false);
+//	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
+////        display_faces(img, all_boxes, "onet", true);
+////	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
 	}
 private:
@@ -119,6 +119,8 @@ private:
             img_vec.push_back(img_n);
 		}
 		int num_patches = bboxes.size();
+//        std::cout<<img.row(100).row(0).row(0)<<std::endl;
+//        getchar();
 		input_blob.Reshape(num_patches, channels, height, width);
 		transformer_->Transform(img_vec, &input_blob);
 		std::vector<caffe::Blob<Dtype>*> input_data;

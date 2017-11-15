@@ -39,14 +39,15 @@ public:
                                std::string dst_path);//Similar to above
     void generate_patches_cnn(std::string, int, std::string);
     void initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &, const float, const std::vector<float>);
-    void merge_image(const cv::Mat&, const cv::Mat&, cv::Mat &);
+//    void merge_image(const cv::Mat&, const cv::Mat&, cv::Mat &);
+    void merge_image(cv::Mat&, cv::Mat&, cv::Mat &);
 private:
     void create_patches(std::string, std::vector<cv::Rect> &, int, std::string);
     void create_negative_samples(cv::Mat &, std::vector<cv::Rect> &, int, std::string);
     void create_positive_samples(cv::Mat &, std::vector<cv::Rect> &, int, std::string, std::string);
     void write_to_disk(const cv::Mat & image, int img_size, const std::string & name_prefix, int label,
                        const bool augmentation, const cv::Rect &, const cv::Rect &);
-    bool transfer_16u28u(cv::Mat &img_16u, cv::Mat &img_8u);
+//    bool transfer_16u28u(cv::Mat &img_16u, cv::Mat &img_8u);
     void save2hdf5(const cv::Mat & image, const std::vector<float> label);
     void save2disk(const cv::Mat & image, const std::vector<float> label, const std::string &);
 private:

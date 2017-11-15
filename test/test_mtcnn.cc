@@ -40,26 +40,14 @@ int main(int argc, char * argv[]) {
         input_fid>>img_name;
         cv::Mat image_ir = cv::imread(img_name, CV_8UC1);
         FILEPARTS::replace_string(img_name, "cam0", "dep0");
-//        std::cout<<img_name<<std::endl;
         cv::Mat image_dp = cv::imread(img_name, CV_16UC1);
         cv::bitwise_and(image_dp, 0x1FFF, image_dp);
-        cv::Mat img_ir_float(image_ir.size(), CV_32FC1);
-        cv::Mat img_dp_float(image_ir.size(), CV_32FC1);
-//        image_ir.convertTo(img_ir_float, CV_32FC1, 0.0125f, -23.9459f*0.0125f);
-//        image_dp.convertTo(img_dp_float, CV_32FC1, 0.00083f, -474.2429f*0.00083f);
-        image_ir.convertTo(img_ir_float, CV_32FC1);
-        img_ir_float = (img_ir_float - 23.9459f)*0.0125f;
-        image_dp.convertTo(img_dp_float, CV_32FC1);
-        img_dp_float = (img_dp_float - 474.2429f)*0.00083f;
-        std::vector<cv::Mat> image_ir_dp;
-        image_ir_dp.push_back(img_ir_float);
-        image_ir_dp.push_back(img_dp_float);
-        cv::Mat image(image_ir.size(), CV_32FC2);
-        cv::merge(image_ir_dp, image);
-//        std::cout<<image.size()<<" "<<image.channels()<<std::endl;
+        cv::transpose(image_ir, image_ir);
+        cv::transpose(image_dp, image_dp);
 
         gettimeofday(&formertime, NULL);
-        cv::Rect hand_bbx = get_hand_bbx(image);
+        cv::Rect hand_bbx = get_hand_bbx_irdp(image_ir, image_dp);
+//        cv::Rect hand_bbx = get_hand_bbx(image_ir);
 //        detector->detect_face(image);
         gettimeofday(&curtime, NULL);
         double time_cost = (curtime.tv_sec - formertime.tv_sec) + (curtime.tv_usec - formertime.tv_usec) / 1000000.0;
@@ -69,6 +57,7 @@ int main(int argc, char * argv[]) {
 
         //Display the image
         cv::rectangle(image_ir, hand_bbx, cv::Scalar(255));
+        cv::transpose(image_ir, image_ir);
         cv::imshow("BBX", image_ir);
         cv::waitKey(0);
     }
