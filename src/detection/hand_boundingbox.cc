@@ -12,7 +12,7 @@ int initialize_detector(const std::map<std::string, std::pair<std::string, std::
 //    float img2net_scale = 0.0125;
     //Set the channels for preparing data before detection
     int channels = 2;
-    std::vector<float> mean_value(1, 0.0f);
+    std::vector<float> mean_value(2, 0.0f);
     float img2net_scale = 1.0f;
     detector = boost::make_shared<FaceDetector<float> >(channels);
     if(detector->initialize_network(modelpath)<0) {
@@ -46,10 +46,10 @@ cv::Rect get_hand_bbx(const cv::Mat &image) {
 //Get the bounding box
 cv::Rect get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Mat &img_dp) {
     //Preprocessment
-    float mean_ir = 23.9459f;
-    float mean_dp = 474.2429f;
-//    float mean_ir = 0.0f;
-//    float mean_dp = 0.0f;
+//    float mean_ir = 23.9459f;
+//    float mean_dp = 474.2429f;
+    float mean_ir = 0.0f;
+    float mean_dp = 0.0f;
     float scale_ir = 0.0125f;
     float scale_dp = 0.00083f;
     cv::Mat tmpimg_ir = img_ir.clone();

@@ -12,9 +12,9 @@ int main(int argc, char * argv[]) {
     std::string imgs_path(argv[1]);
     std::map<std::string, std::pair<std::string, std::string> > modelpath;
     std::string models_dir = "../data/model/";
-    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_111k.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
-    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_iter_20000.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
-    modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_20000.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
+    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_200000.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
+    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_iter_200000.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
+    modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_200000.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
 //    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
 //    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
 //    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
@@ -58,15 +58,15 @@ int main(int argc, char * argv[]) {
         //Display the image
         cv::rectangle(image_ir, hand_bbx, cv::Scalar(255));
         cv::transpose(image_ir, image_ir);
-        cv::imshow("BBX", image_ir);
-        cv::waitKey(0);
+//        cv::imshow("BBX", image_ir);
+//        cv::waitKey(0);
         //Write the image
         std::string file_path;
         std::string file_name;
         std::string file_ext;
         FILEPARTS::fileparts(img_name, file_path, file_name, file_ext);
         std::string dest_path;
-        FILEPARTS::fullfile(dest_path, 2, std::string("data"), file_name+"."+file_ext);
+        FILEPARTS::fullfile(dest_path, 2, std::string("data_ir"), file_name+"."+file_ext);
         std::cout<<dest_path<<std::endl;
         cv::imwrite(dest_path, image_ir);
     }

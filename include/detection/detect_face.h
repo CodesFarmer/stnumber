@@ -7,6 +7,7 @@
 #pragma(once)
 #include <vector>
 #include <map>
+#include <stdexcept>
 
 #include <opencv2/opencv.hpp>
 #include "caffe/blob.hpp"
@@ -36,11 +37,13 @@ public:
 		for(iter = netpath.begin();iter!=netpath.end();iter++) {
 			if(access(iter->second.first.c_str(), F_OK) == -1) {
 				std::cerr<<"The model "<<iter->second.first<<" does not exist..."<<std::endl;
-				return -1;
+				throw std::invalid_argument("");
+//				return -1;
 			}
 			if(access(iter->second.second.c_str(), F_OK) == -1) {
 				std::cerr<<"The model proto "<<iter->second.second<<" does not exist..."<<std::endl;
-				return -1;
+				throw std::invalid_argument("");
+//				return -1;
 			}
 		}
 		//We will initialize each network respectively
@@ -99,9 +102,9 @@ public:
 	  	std::vector<std::vector<Dtype> > all_boxes;
         all_boxes = propose_bboxes(img, 0.709, 0.7);
 ////        display_faces(img, all_boxes, "pnet", false);
-//	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
+	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
 ////        display_faces(img, all_boxes, "rnet", false);
-//	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
+	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
 ////        display_faces(img, all_boxes, "onet", true);
 ////	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
@@ -119,8 +122,6 @@ private:
             img_vec.push_back(img_n);
 		}
 		int num_patches = bboxes.size();
-//        std::cout<<img.row(100).row(0).row(0)<<std::endl;
-//        getchar();
 		input_blob.Reshape(num_patches, channels, height, width);
 		transformer_->Transform(img_vec, &input_blob);
 		std::vector<caffe::Blob<Dtype>*> input_data;

@@ -204,7 +204,7 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
 void GeneratePatch::initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > & model_path,
                                         const float img2net_scale,
                                         const std::vector<float> mean_value) {
-    detector_ = boost::make_shared<FaceDetector<float> >();
+    detector_ = boost::make_shared<FaceDetector<float> >(2);
     detector_->initialize_network(model_path);
     detector_->initialize_transformer(img2net_scale, mean_value);
 }
@@ -238,17 +238,37 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
 //        bounding_boxes = get_bounding_boxes("/home/slam/DepthGesture/stnumber/build/1509071930041880334.xml");
         //Read the infrared image at first
         cv::Mat image_ir = cv::imread(img_path, CV_8UC1);
+        if(image_ir.empty()) continue;
+        //Before input into neural network
+        float mean_ir = 0.0f;
+        float scale_ir = 0.0125f;
+        cv::Mat tmpimg_ir = image_ir.clone();
+        cv::Mat img_ir_float(tmpimg_ir.size(), CV_32FC1);
+        tmpimg_ir.convertTo(img_ir_float, CV_32FC1);
+        img_ir_float = (img_ir_float - mean_ir)*scale_ir;
+
         cv::Mat image = image_ir.clone();
+        cv::Mat image_float = image_ir.clone();
 #ifdef USE_DEPTH
         //Read the depth image
         FILEPARTS::replace_string(img_path, "cam0", "dep0");
         FILEPARTS::replace_string(img_path, "jpg", "png");
         cv::Mat image_dp = cv::imread(img_path, CV_16UC1);
+        if(image_dp.empty()) continue;
         cv::bitwise_and(image_dp, 0x1FFF, image_dp);
+        //Before input into neural network
+        float mean_dp = 0.0f;
+        float scale_dp = 0.00083f;
+        cv::Mat tmpimg_dp = image_dp.clone();
+        cv::Mat img_dp_float(tmpimg_dp.size(), CV_32FC1);
+        tmpimg_dp.convertTo(img_dp_float, CV_32FC1);
+        img_dp_float = (img_dp_float - mean_dp)*scale_dp;
+        merge_image(img_ir_float, img_dp_float, image_float);
         merge_image(image_ir, image_dp, image);
 #endif //USE_DEPTH
 
-        std::vector<std::vector<float> > hand_bbx =  detector_->detect_face(image);
+        //Forward pass the neural network
+        std::vector<std::vector<float> > hand_bbx =  detector_->detect_face(image_float);
         //get the details of file path
         std::string file_path;
         std::string file_name;
@@ -293,9 +313,9 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
             }
         }
 
-        if(bounding_boxes.size() > 0 && hand_bbx.size() == 0) {
-            create_patches(img_path, bounding_boxes, img_size, dst_path);
-        }
+//        if(bounding_boxes.size() > 0 && hand_bbx.size() == 0) {
+//            create_patches(img_path, bounding_boxes, img_size, dst_path);
+//        }
         std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
                   << std::flush;
         cur_iter++;
@@ -515,7 +535,7 @@ void GeneratePatch::create_destination(const std::string &dst_path, int img_size
         //create HDF5 file
         //Setup the dimension of input data
         std::vector<int> data_dimension;
-        data_dimension.push_back(1000);//num of batches
+        data_dimension.push_back(2);//num of batches
         data_dimension.push_back(1);//channels
 #ifdef USE_DEPTH
         data_dimension[data_dimension.size()-1] = 2;//channels
@@ -537,7 +557,7 @@ void GeneratePatch::create_destination(const std::string &dst_path, int img_size
         mean_value.push_back(0.0f);
         shrink_ratio.push_back(0.0125f);
         shrink_ratio.push_back(0.00083f);
-        hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 1000);
+        hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 100);
         hdf5_writer_->create_hdf5(dst_path);
         hdf5_writer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
         hdf5_writer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
