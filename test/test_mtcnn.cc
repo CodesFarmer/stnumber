@@ -22,7 +22,7 @@ int main(int argc, char * argv[]) {
                                            models_dir + std::string("rnet_deploy.prototxt"));
         modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_200000.caffemodel"),
                                            models_dir + std::string("onet_deploy.prototxt"));
-        modelpath["tnet"] = std::make_pair(models_dir + std::string("tnet_iter_t00000.caffemodel"),
+        modelpath["tnet"] = std::make_pair(models_dir + std::string("tnet.caffemodel"),
                                            models_dir + std::string("tnet_deploy.prototxt"));
     }
     else if(ironly){//IR only
@@ -67,8 +67,8 @@ int main(int argc, char * argv[]) {
         //Display the image
         cv::rectangle(image_ir, hand_bbx, cv::Scalar(255));
         if(isrotate) cv::transpose(image_ir, image_ir);
-//        cv::imshow("BBX", image_ir);
-//        cv::waitKey(0);
+        cv::imshow("BBX", image_ir);
+        cv::waitKey(0);
         //Write the image
         std::string file_path;
         std::string file_name;
