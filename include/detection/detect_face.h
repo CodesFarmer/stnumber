@@ -48,17 +48,15 @@ public:
 				}
 			}
 			if(access(iter->second.second.c_str(), F_OK) == -1) {
-				if(access(iter->second.first.c_str(), F_OK) == -1) {
-					if(iter->first != "tnet") {
-						std::cerr << "The model proto " << iter->second.second << " does not exist..." << std::endl;
-						throw std::invalid_argument("");
+				if(iter->first != "tnet") {
+					std::cerr << "The model proto " << iter->second.second << " does not exist..." << std::endl;
+					throw std::invalid_argument("");
 //						return -1;
-					}
-					else {
-						has_tnet_ = false;
-						std::cerr << "WARING: The model " << iter->second.second << " does not exist... ";
-						std::cerr << "We will use ONet for tracking, while it will slow down the program..." << std::endl;
-					}
+				}
+				else {
+					has_tnet_ = false;
+					std::cerr << "WARING: The model " << iter->second.second << " does not exist... ";
+					std::cerr << "We will use ONet for tracking, while it will slow down the program..." << std::endl;
 				}
 			}
 		}
