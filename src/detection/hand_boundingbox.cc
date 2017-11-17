@@ -7,12 +7,11 @@
 
 extern "C" {
 boost::shared_ptr<FaceDetector<float> > detector;
-int initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &modelpath) {
+int initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &modelpath, int channels) {
 //    std::vector<float> mean_value(1, 17.2196);
 //    float img2net_scale = 0.0125;
     //Set the channels for preparing data before detection
-    int channels = 2;
-    std::vector<float> mean_value(2, 0.0f);
+    std::vector<float> mean_value(channels, 0.0f);
     float img2net_scale = 1.0f;
     detector = boost::make_shared<FaceDetector<float> >(channels);
     if(detector->initialize_network(modelpath)<0) {
