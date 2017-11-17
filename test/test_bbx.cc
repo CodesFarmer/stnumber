@@ -20,8 +20,9 @@ int main(int argc, char * argv[]) {
         image = cv::imread(img_name, CV_8UC1);
 //    cv::imshow("test", image);
 //    cv::waitKey(0);
-        cv::Rect hand_bbx = get_hand_bbx(image);
-        cv::rectangle(image, hand_bbx, cv::Scalar(255));
+        std::pair<float, cv::Rect> hand_bbx;
+        hand_bbx = get_hand_bbx(image);
+        cv::rectangle(image, hand_bbx.second, cv::Scalar(255));
         cv::imshow("BBX", image);
         cv::waitKey(0);
     }

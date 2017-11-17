@@ -93,6 +93,7 @@ public:
 		transformer_ = tmp_transform;
 	};
 	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image) {
+		//The first 4 elements in all_boxes is the bounding box, and the 5th is probability
 		//Attent the depth has changed...
 //        input_channels_ = 2;
 		cv::Mat img(image.rows, image.cols, image.depth());
@@ -108,6 +109,10 @@ public:
 ////        display_faces(img, all_boxes, "onet", true);
 ////	  	// return alignment_faces(image, all_boxes);
 	  	return all_boxes;
+	}
+	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image, cv::Rect) {
+		cv::Mat img(image.rows, image.cols, image.depth());
+		image.copyTo(img);
 	}
 private:
 	//Make a vector of Blob for input an image
@@ -273,7 +278,6 @@ private:
 
 		return selected_bboxes;
 	}
-
 
 	std::vector<std::vector<Dtype> > blob2vector(std::vector<caffe::Blob<Dtype>*>& output_data, float threshold, float scale, int whichnet) {
 		caffe::Blob<Dtype>* output_blob_ptr_bboxregression = output_data[0];

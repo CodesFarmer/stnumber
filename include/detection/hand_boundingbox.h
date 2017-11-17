@@ -14,8 +14,10 @@
 //}
 extern "C" {
     int initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &, int channels = 1);
-    cv::Rect get_hand_bbx(const cv::Mat &);
-    cv::Rect get_hand_bbx_irdp(const cv::Mat &, const cv::Mat &);
+    std::pair<float, cv::Rect> get_hand_bbx(const cv::Mat &);
+    std::pair<float, cv::Rect> get_hand_bbx_irdp(const cv::Mat &, const cv::Mat &);
+    std::pair<float, cv::Rect> tracking_hand(const cv::Mat&, const cv::Mat &, const cv::Rect &);
+    bool pre_processing(const cv::Mat &, const cv::Mat &, cv::Mat &);
 };
 
 #endif //PROJECT_HAND_BOUNDINGBOX_H

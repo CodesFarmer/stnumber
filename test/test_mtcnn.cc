@@ -13,7 +13,7 @@ int main(int argc, char * argv[]) {
     std::map<std::string, std::pair<std::string, std::string> > modelpath;
     std::string models_dir = "../data/model/";
     bool ironly = false;
-    bool isrotate = true;
+    bool isrotate = false;
     if(!ironly) {
         //Depth and Infrared images both
         modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_200000.caffemodel"),
@@ -51,7 +51,8 @@ int main(int argc, char * argv[]) {
         }
 
         gettimeofday(&formertime, NULL);
-        cv::Rect hand_bbx;
+//        cv::Rect hand_bbx;
+        std::pair<float, cv::Rect> hand_bbx;
         if(!ironly) hand_bbx = get_hand_bbx_irdp(image_ir, image_dp);
         else hand_bbx = get_hand_bbx(image_ir);
 //        detector->detect_face(image);
@@ -62,7 +63,7 @@ int main(int argc, char * argv[]) {
         jter++;
 
         //Display the image
-        cv::rectangle(image_ir, hand_bbx, cv::Scalar(255));
+        cv::rectangle(image_ir, hand_bbx.second, cv::Scalar(255));
         if(isrotate) cv::transpose(image_ir, image_ir);
 //        cv::imshow("BBX", image_ir);
 //        cv::waitKey(0);
@@ -72,7 +73,7 @@ int main(int argc, char * argv[]) {
         std::string file_ext;
         FILEPARTS::fileparts(img_name, file_path, file_name, file_ext);
         std::string dest_path;
-        if(~ironly) FILEPARTS::fullfile(dest_path, 2, std::string("data_dp"), file_name+"."+file_ext);
+        if(!ironly) FILEPARTS::fullfile(dest_path, 2, std::string("data_dp"), file_name+"."+file_ext);
         else FILEPARTS::fullfile(dest_path, 2, std::string("data_ir"), file_name+"."+file_ext);
         std::cout<<dest_path<<std::endl;
         cv::imwrite(dest_path, image_ir);

@@ -1,0 +1,707 @@
+#TrackingNet
+#input dim: 48, 48
+
+#############################################DataLayer################################################
+input: "data"
+input_dim: 1
+input_dim: 2
+input_dim: 48
+input_dim: 48
+
+#############################################Convolution&&Maxpooling################################################
+layer {
+	bottom: "data"
+	top: "conv1"
+	type: "Convolution"
+	name: "conv1"
+	convolution_param {
+		num_output: 32
+		kernel_size: 3
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "conv1"
+	top: "conv1"
+	type: "PReLU"
+	name: "prelu1"
+}
+
+layer {
+	bottom: "conv1"
+	top: "pool1"
+	type: "Pooling"
+	name: "pool1"
+	pooling_param {
+		pool: MAX
+		kernel_size: 3
+		stride: 2
+	}
+}
+
+#############################################FireModule1################################################
+
+layer {
+	bottom: "pool1"
+	top: "fm1_sq"
+	type: "Convolution"
+	name: "fm1_sq"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm1_sq"
+	top: "fm1_sq"
+	type: "PReLU"
+	name: "prelu2"
+}
+
+layer {
+	bottom: "fm1_sq"
+	top: "fm1_exp1x1"
+	type: "Convolution"
+	name: "fm1_exp1x1"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm1_sq"
+	top: "fm1_exp3x3"
+	type: "Convolution"
+	name: "fm1_exp3x3"
+	convolution_param {
+		num_output: 32
+		kernel_size: 3
+		stride: 1
+		pad: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm1_exp1x1"
+	bottom: "fm1_exp3x3"
+	top: "fm1"
+	type: "Concat"
+	name: "fm1"
+}
+
+layer {
+	bottom: "fm1"
+	top: "fm1"
+	type: "PReLU"
+	name: "prelu3"
+}
+
+#############################################FireModule2################################################
+
+layer {
+	bottom: "fm1"
+	top: "fm2_sq"
+	type: "Convolution"
+	name: "fm2_sq"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm2_sq"
+	top: "fm2_sq"
+	type: "PReLU"
+	name: "prelu4"
+}
+
+layer {
+	bottom: "fm2_sq"
+	top: "fm2_exp1x1"
+	type: "Convolution"
+	name: "fm2_exp1x1"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm2_sq"
+	top: "fm2_exp3x3"
+	type: "Convolution"
+	name: "fm2_exp3x3"
+	convolution_param {
+		num_output: 32
+		kernel_size: 3
+		stride: 1
+		pad: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm2_exp1x1"
+	bottom: "fm2_exp3x3"
+	top: "fm2"
+	type: "Concat"
+	name: "fm2"
+}
+
+layer {
+	bottom: "fm2"
+	top: "fm2"
+	type: "PReLU"
+	name: "prelu5"
+}
+
+#############################################FireModule3################################################
+
+layer {
+	bottom: "fm2"
+	top: "fm3_sq"
+	type: "Convolution"
+	name: "fm3_sq"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm3_sq"
+	top: "fm3_sq"
+	type: "PReLU"
+	name: "prelu6"
+}
+
+layer {
+	bottom: "fm3_sq"
+	top: "fm3_exp1x1"
+	type: "Convolution"
+	name: "fm3_exp1x1"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm3_sq"
+	top: "fm3_exp3x3"
+	type: "Convolution"
+	name: "fm3_exp3x3"
+	convolution_param {
+		num_output: 32
+		kernel_size: 3
+		stride: 1
+		pad: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm3_exp1x1"
+	bottom: "fm3_exp3x3"
+	top: "fm3"
+	type: "Concat"
+	name: "fm3"
+}
+
+layer {
+	bottom: "fm3"
+	top: "fm3"
+	type: "PReLU"
+	name: "prelu7"
+}
+
+#############################################MaxPooling################################################
+layer {
+	bottom: "fm3"
+	top: "pool2"
+	type: "Pooling"
+	name: "pool2"
+	pooling_param {
+		pool: MAX
+		kernel_size: 3
+		stride: 2
+	}
+}
+
+#############################################FireModule4################################################
+
+layer {
+	bottom: "pool2"
+	top: "fm4_sq"
+	type: "Convolution"
+	name: "fm4_sq"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm4_sq"
+	top: "fm4_sq"
+	type: "PReLU"
+	name: "prelu8"
+}
+
+layer {
+	bottom: "fm4_sq"
+	top: "fm4_exp1x1"
+	type: "Convolution"
+	name: "fm4_exp1x1"
+	convolution_param {
+		num_output: 32
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm4_sq"
+	top: "fm4_exp3x3"
+	type: "Convolution"
+	name: "fm4_exp3x3"
+	convolution_param {
+		num_output: 32
+		kernel_size: 3
+		stride: 1
+		pad: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm4_exp1x1"
+	bottom: "fm4_exp3x3"
+	top: "fm4"
+	type: "Concat"
+	name: "fm4"
+}
+
+layer {
+	bottom: "fm4"
+	top: "fm4"
+	type: "PReLU"
+	name: "prelu9"
+}
+
+#############################################FireModule5################################################
+
+layer {
+	bottom: "fm4"
+	top: "fm5_sq"
+	type: "Convolution"
+	name: "fm5_sq"
+	convolution_param {
+		num_output: 64
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm5_sq"
+	top: "fm5_sq"
+	type: "PReLU"
+	name: "prelu10"
+}
+
+layer {
+	bottom: "fm5_sq"
+	top: "fm5_exp1x1"
+	type: "Convolution"
+	name: "fm5_exp1x1"
+	convolution_param {
+		num_output: 64
+		kernel_size: 1
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm5_sq"
+	top: "fm5_exp3x3"
+	type: "Convolution"
+	name: "fm5_exp3x3"
+	convolution_param {
+		num_output: 64
+		kernel_size: 3
+		stride: 1
+		pad: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "fm5_exp1x1"
+	bottom: "fm5_exp3x3"
+	top: "fm5"
+	type: "Concat"
+	name: "fm5"
+}
+
+layer {
+	bottom: "fm5"
+	top: "fm5"
+	type: "PReLU"
+	name: "prelu11"
+}
+
+#############################################MaxPooling################################################
+layer {
+	bottom: "fm5"
+	top: "pool3"
+	type: "Pooling"
+	name: "pool3"
+	pooling_param {
+		pool: MAX
+		kernel_size: 3
+		stride: 2
+	}
+}
+
+layer {
+	bottom: "pool3"
+	top: "conv2"
+	type: "Convolution"
+	name: "conv2"
+	convolution_param {
+		num_output: 128
+		kernel_size: 3
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "conv2"
+	top: "conv2"
+	type: "PReLU"
+	name: "prelu14"
+}
+
+layer {
+	bottom: "conv2"
+	top: "conv3_1"
+	type: "Convolution"
+	name: "conv3_1"
+	convolution_param {
+		num_output: 2
+		kernel_size: 3
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+	bottom: "conv2"
+	top: "conv3_2"
+	type: "Convolution"
+	name: "conv3_2"
+	convolution_param {
+		num_output: 4
+		kernel_size: 3
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 1
+	}
+	param {
+		lr_mult: 1
+		decay_mult: 0
+	}
+}
+
+layer {
+  name: "prob1"
+  type: "Softmax"
+  bottom: "conv3_1"
+  top: "prob1"
+}
