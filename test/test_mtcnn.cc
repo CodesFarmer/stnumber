@@ -22,6 +22,8 @@ int main(int argc, char * argv[]) {
                                            models_dir + std::string("rnet_deploy.prototxt"));
         modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_200000.caffemodel"),
                                            models_dir + std::string("onet_deploy.prototxt"));
+        modelpath["tnet"] = std::make_pair(models_dir + std::string("tnet_iter_t00000.caffemodel"),
+                                           models_dir + std::string("tnet_deploy.prototxt"));
     }
     else if(ironly){//IR only
         modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_1.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
@@ -52,7 +54,7 @@ int main(int argc, char * argv[]) {
 
         gettimeofday(&formertime, NULL);
 //        cv::Rect hand_bbx;
-        std::pair<float, cv::Rect> hand_bbx;
+        cv::Rect hand_bbx;
         if(!ironly) hand_bbx = get_hand_bbx_irdp(image_ir, image_dp);
         else hand_bbx = get_hand_bbx(image_ir);
 //        detector->detect_face(image);
@@ -63,7 +65,7 @@ int main(int argc, char * argv[]) {
         jter++;
 
         //Display the image
-        cv::rectangle(image_ir, hand_bbx.second, cv::Scalar(255));
+        cv::rectangle(image_ir, hand_bbx, cv::Scalar(255));
         if(isrotate) cv::transpose(image_ir, image_ir);
 //        cv::imshow("BBX", image_ir);
 //        cv::waitKey(0);

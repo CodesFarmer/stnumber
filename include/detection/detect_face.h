@@ -30,20 +30,34 @@ public:
 		Bbox(int xs, int ys, int xe, int ye):x1(xs), y1(ys), x2(xe), y2(ye){};
 	};
 public:
-    FaceDetector(int channels=1):input_channels_(channels){}
+    FaceDetector(int channels=1):input_channels_(channels), has_tnet_(true){}
 	int initialize_network(std::map<std::string, std::pair<std::string, std::string> > netpath) {
 		//First of all, we will check if the model and model proto exist
 		std::map<std::string, std::pair<std::string, std::string> >::iterator iter;
 		for(iter = netpath.begin();iter!=netpath.end();iter++) {
 			if(access(iter->second.first.c_str(), F_OK) == -1) {
-				std::cerr<<"The model "<<iter->second.first<<" does not exist..."<<std::endl;
-				throw std::invalid_argument("");
-//				return -1;
+				if(iter->first != "tnet") {
+					std::cerr << "The model " << iter->second.first << " does not exist..." << std::endl;
+					throw std::invalid_argument("");
+//					return -1;
+				}
+				else {
+					has_tnet_ = false;
+					std::cerr << "WARING: The model " << iter->second.first << " does not exist... ";
+					std::cerr << "We will use ONet for tracking, while it will slow down the program..." << std::endl;
+				}
 			}
 			if(access(iter->second.second.c_str(), F_OK) == -1) {
-				std::cerr<<"The model proto "<<iter->second.second<<" does not exist..."<<std::endl;
-				throw std::invalid_argument("");
-//				return -1;
+				if(access(iter->second.first.c_str(), F_OK) == -1) {
+					std::cerr << "The model proto " << iter->second.second << " does not exist..." << std::endl;
+					throw std::invalid_argument("");
+//					return -1;
+				}
+				else {
+					has_tnet_ = false;
+					std::cerr << "WARING: The model " << iter->second.second << " does not exist... ";
+					std::cerr << "We will use ONet for tracking, while it will slow down the program..." << std::endl;
+				}
 			}
 		}
 		//We will initialize each network respectively
@@ -80,6 +94,17 @@ public:
 			std::cerr<<"Fatal error wihile initializing network ONet..."<<std::endl;
 			return -1;
 		}
+		//TNet
+		try{
+			boost::shared_ptr<caffe::Net<Dtype> > TNet(new caffe::Net<Dtype>(netpath["tnet"].second, caffe::TEST, 0, NULL));
+			// boost::shared_ptr<caffe::Net<Dtype> > TNet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL, NULL));
+			TNet_ = TNet;
+			TNet_->CopyTrainedLayersFrom(netpath["tnet"].first);
+		}
+		catch(int error_){
+			std::cerr<<"Fatal error wihile initializing network ONet..."<<std::endl;
+			return -1;
+		}
 		return 0;
 	};
 	//This function initialize a transformer which will transform the data to meet the require of network
@@ -92,6 +117,35 @@ public:
 		boost::shared_ptr<caffe::DataTransformer<Dtype> > tmp_transform(new caffe::DataTransformer<Dtype>(transform_params, caffe::TEST));
 		transformer_ = tmp_transform;
 	};
+	std::vector<std::vector<Dtype> > tracking_hand(const cv::Mat& image, const std::pair<float, cv::Rect> & rect, float threshold = 0.6) {
+		//declare the variable to store the bounding box with probability
+		std::vector<std::vector<Dtype> > all_boxes;
+		cv::Mat img(image.rows, image.cols, image.depth());
+		image.copyTo(img);
+		//If the likehood of the rect belong to a hand under the threshold, we refind it with MTCNN
+		if(rect.first < threshold) {
+			std::cout<<"MTCNN"<<std::endl;
+			all_boxes = detect_face(img);
+			return all_boxes;
+		}
+		//Transfer the rect into std::vector
+		std::vector<Dtype> init_boxes;
+		init_boxes.push_back(rect.second.x);
+		init_boxes.push_back(rect.second.y);
+		init_boxes.push_back(rect.second.x + rect.second.width - 1);
+		init_boxes.push_back(rect.second.y + rect.second.height - 1);
+		all_boxes.push_back(init_boxes);
+		//If there exist tnet, we tracking object with tnet, else we use onet
+		if(has_tnet_) {
+			std::cout<<"TNET"<<std::endl;
+			all_boxes = tracking_bboxes(img, all_boxes, 0.7);
+		}
+		else {
+			std::cout<<"ONET"<<std::endl;
+			all_boxes = output_bboxes(img, all_boxes, 0.6);
+		}
+		return all_boxes;
+	}
 	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image) {
 		//The first 4 elements in all_boxes is the bounding box, and the 5th is probability
 		//Attent the depth has changed...
@@ -100,19 +154,15 @@ public:
 		image.copyTo(img);
 //		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
-	  	std::vector<std::vector<Dtype> > all_boxes;
-        all_boxes = propose_bboxes(img, 0.709, 0.7);
+		std::vector<std::vector<Dtype> > all_boxes;
+		all_boxes = propose_bboxes(img, 0.709, 0.7);
 ////        display_faces(img, all_boxes, "pnet", false);
-	  	all_boxes = refine_bboxes(img, all_boxes, 0.6);
+		all_boxes = refine_bboxes(img, all_boxes, 0.6);
 ////        display_faces(img, all_boxes, "rnet", false);
-	  	all_boxes = output_bboxes(img, all_boxes, 0.6);
+		all_boxes = output_bboxes(img, all_boxes, 0.6);
 ////        display_faces(img, all_boxes, "onet", true);
 ////	  	// return alignment_faces(image, all_boxes);
-	  	return all_boxes;
-	}
-	std::vector<std::vector<Dtype> > detect_face(cv::Mat& image, cv::Rect) {
-		cv::Mat img(image.rows, image.cols, image.depth());
-		image.copyTo(img);
+		return all_boxes;
 	}
 private:
 	//Make a vector of Blob for input an image
@@ -279,6 +329,40 @@ private:
 		return selected_bboxes;
 	}
 
+	std::vector<std::vector<Dtype> > tracking_bboxes(cv::Mat&img, std::vector<std::vector<Dtype> > &all_bboxes, float threshold) {
+		std::vector<std::vector<Dtype> > selected_bboxes;
+		if(all_bboxes.size() == 0) return selected_bboxes;
+		DetectTools dt_tools;
+		std::vector<std::vector<Dtype> > img_patches = dt_tools.bboxes2patches(all_bboxes, img.rows, img.cols);
+		std::vector<Bbox> box_img;
+		int num_boxes = img_patches.size();
+		int hs = 32;
+		int ws = 32;
+		// num_boxes = 2;
+		for(size_t iter = 0;iter<num_boxes;iter++) {
+			box_img.push_back(Bbox(img_patches[iter][4], img_patches[iter][5], img_patches[iter][6], img_patches[iter][7]));
+		}
+
+		//Transform the Mat file into Blob
+		caffe::Blob<Dtype> input_blob;
+		int channels = input_channels_;
+		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
+		modify_network_input(TNet_, num_boxes, channels, hs, ws);
+		std::vector<caffe::Blob<Dtype>*> output_data = TNet_->Forward(input_data);
+		std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, 0.0, 1.0, 2);
+		std::vector<std::vector<Dtype> > selected_bboxes_mv;
+		all_bboxes[0][4] = bboxes_info[0][0];
+		std::vector<Dtype> boxandmv = all_bboxes[0];
+		boxandmv.push_back(bboxes_info[0][1]);//6
+		boxandmv.push_back(bboxes_info[0][2]);
+		boxandmv.push_back(bboxes_info[0][3]);
+		boxandmv.push_back(bboxes_info[0][4]);//9
+		selected_bboxes_mv.push_back(boxandmv);
+		selected_bboxes = dt_tools.caliberateBboxes(selected_bboxes_mv);
+
+		return selected_bboxes;
+	}
+
 	std::vector<std::vector<Dtype> > blob2vector(std::vector<caffe::Blob<Dtype>*>& output_data, float threshold, float scale, int whichnet) {
 		caffe::Blob<Dtype>* output_blob_ptr_bboxregression = output_data[0];
 		caffe::Blob<Dtype>* output_blob_ptr_probability;
@@ -390,7 +474,8 @@ private:
 	boost::shared_ptr<caffe::Net<Dtype> > PNet_;
 	boost::shared_ptr<caffe::Net<Dtype> > RNet_;
 	boost::shared_ptr<caffe::Net<Dtype> > ONet_;
+	boost::shared_ptr<caffe::Net<Dtype> > TNet_;
 	boost::shared_ptr<caffe::DataTransformer<Dtype> > transformer_;
-	boost::shared_ptr<cv::Mat> img;
     int input_channels_;
+	bool has_tnet_;
 };

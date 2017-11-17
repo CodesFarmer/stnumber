@@ -1,12 +1,12 @@
 #include "hand_boundingbox.h"
 
-#include <opencv2/opencv.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include "detect_face.h"
 
 extern "C" {
 boost::shared_ptr<FaceDetector<float> > detector;
+std::pair<float, cv::Rect> init_rect_;
 int initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &modelpath, int channels) {
 //    std::vector<float> mean_value(1, 17.2196);
 //    float img2net_scale = 0.0125;
@@ -18,9 +18,14 @@ int initialize_detector(const std::map<std::string, std::pair<std::string, std::
         return -1;
     }
     detector->initialize_transformer(img2net_scale, mean_value);
+    init_rect_.first = 0;
+    init_rect_.second.x = 0;
+    init_rect_.second.y = 0;
+    init_rect_.second.width = 0;
+    init_rect_.second.height = 0;
 }
 //Get the bounding box
-std::pair<float, cv::Rect> get_hand_bbx(const cv::Mat &image) {
+cv::Rect get_hand_bbx(const cv::Mat &image) {
     //pre-processing
     float mean_ir = 17.2196f;
     float scale_ir = 0.0125f;
@@ -30,8 +35,7 @@ std::pair<float, cv::Rect> get_hand_bbx(const cv::Mat &image) {
 
     std::vector<std::vector<float> > hand_bbx = detector->detect_face(tmpimg);
     cv::Rect hand_rect(-1, -1, -1, -1);
-    std::pair<float, cv::Rect> box_prob(0.0, hand_rect);
-    if(hand_bbx.size() == 0) return box_prob;
+    if(hand_bbx.size() == 0) return hand_rect;
     int x_l = std::max( hand_bbx[0][0], 0.0f );
     int y_l = std::max( hand_bbx[0][1], 0.0f);
     int x_r = std::min( hand_bbx[0][2], float(image.cols-1) );
@@ -40,22 +44,20 @@ std::pair<float, cv::Rect> get_hand_bbx(const cv::Mat &image) {
     hand_rect.y = y_l;
     hand_rect.width = x_r - x_l + 1;
     hand_rect.height = y_r - y_l + 1;
-    box_prob.first = hand_bbx[0][4];
-    box_prob.second = hand_rect;
-    return box_prob;
+    return hand_rect;
 }
 
 //Get the bounding box
-std::pair<float, cv::Rect> get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Mat &img_dp) {
+cv::Rect get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Mat &img_dp) {
     //Preprocessment
     cv::Mat image;
     pre_processing(img_ir, img_dp, image);
 
     //Forward pass the neural network and get the bounding boxes
-    std::vector<std::vector<float> > hand_bbx = detector->detect_face(image);
+    //, const std::pair<float, cv::Rect> & rect, float threshold = 0.6
+    std::vector<std::vector<float> > hand_bbx = detector->tracking_hand(image, init_rect_, 0.6);
     cv::Rect hand_rect(-1, -1, -1, -1);
-    std::pair<float, cv::Rect> box_prob(0.0, hand_rect);
-    if(hand_bbx.size() == 0) return box_prob;
+    if(hand_bbx.size() == 0) return hand_rect;
     int x_l = std::max( hand_bbx[0][0], 0.0f );
     int y_l = std::max( hand_bbx[0][1], 0.0f);
     int x_r = std::min( hand_bbx[0][2], float(image.cols-1) );
@@ -64,33 +66,10 @@ std::pair<float, cv::Rect> get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Ma
     hand_rect.y = y_l;
     hand_rect.width = x_r - x_l + 1;
     hand_rect.height = y_r - y_l + 1;
-    box_prob.first = hand_bbx[0][4];
-    box_prob.second = hand_rect;
-    return box_prob;
+    init_rect_.first = hand_bbx[0][4];
+    init_rect_.second = hand_rect;
+    return hand_rect;
 }
-
-std::pair<float, cv::Rect> tracking_hand(const cv::Mat &img_ir, const cv::Mat &img_dp, const cv::Rect &init_bbx) {
-    cv::Mat image;
-    pre_processing(img_ir, img_dp, image);
-
-    //Forward pass the neural network and get the bounding boxes
-    std::vector<std::vector<float> > hand_bbx = detector->detect_face(image, init_bbx);
-    cv::Rect hand_rect(-1, -1, -1, -1);
-    std::pair<float, cv::Rect> box_prob(0.0, hand_rect);
-    if(hand_bbx.size() == 0) return box_prob;
-    int x_l = std::max( hand_bbx[0][0], 0.0f );
-    int y_l = std::max( hand_bbx[0][1], 0.0f);
-    int x_r = std::min( hand_bbx[0][2], float(image.cols-1) );
-    int y_r = std::min( hand_bbx[0][3], float(image.rows-1) );
-    hand_rect.x = x_l;
-    hand_rect.y = y_l;
-    hand_rect.width = x_r - x_l + 1;
-    hand_rect.height = y_r - y_l + 1;
-    box_prob.first = hand_bbx[0][4];
-    box_prob.second = hand_rect;
-    return box_prob;
-};
-
 
 bool pre_processing(const cv::Mat &img_ir, const cv::Mat &img_dp, cv::Mat & output) {
     float mean_ir = 0.0f;
