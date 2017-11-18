@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <stdexcept>
+#include <boost/algorithm/string.hpp>
 
 #include <opencv2/opencv.hpp>
 #include "caffe/blob.hpp"
@@ -34,9 +35,10 @@ public:
 	int initialize_network(std::map<std::string, std::pair<std::string, std::string> > netpath) {
 		//First of all, we will check if the model and model proto exist
 		std::map<std::string, std::pair<std::string, std::string> >::iterator iter;
+        if(netpath.count("tnet") == 0) has_tnet_ = false;
 		for(iter = netpath.begin();iter!=netpath.end();iter++) {
 			if(access(iter->second.first.c_str(), F_OK) == -1) {
-				if(iter->first != "tnet") {
+				if(!boost::iequals(iter->first, "tnet")) {
 					std::cerr << "The model " << iter->second.first << " does not exist..." << std::endl;
 					throw std::invalid_argument("");
 //					return -1;
@@ -45,17 +47,18 @@ public:
 					has_tnet_ = false;
 					std::cerr << "WARING: The model " << iter->second.first << " does not exist... ";
 					std::cerr << "We will use ONet for tracking, while it will slow down the program..." << std::endl;
+					getchar();
 				}
 			}
 			if(access(iter->second.second.c_str(), F_OK) == -1) {
-				if(iter->first != "tnet") {
+				if(!boost::iequals(iter->first, "tnet")) {
 					std::cerr << "The model proto " << iter->second.second << " does not exist..." << std::endl;
 					throw std::invalid_argument("");
 //						return -1;
 				}
 				else {
 					has_tnet_ = false;
-					std::cerr << "WARING: The model " << iter->second.second << " does not exist... ";
+					std::cerr << "WARING: The model proto " << iter->second.second << " does not exist... ";
 					std::cerr << "We will use ONet for tracking, while it will slow down the program..." << std::endl;
 				}
 			}
@@ -95,16 +98,19 @@ public:
 			return -1;
 		}
 		//TNet
-		try{
-			boost::shared_ptr<caffe::Net<Dtype> > TNet(new caffe::Net<Dtype>(netpath["tnet"].second, caffe::TEST, 0, NULL));
-			// boost::shared_ptr<caffe::Net<Dtype> > TNet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL, NULL));
-			TNet_ = TNet;
-			TNet_->CopyTrainedLayersFrom(netpath["tnet"].first);
-		}
-		catch(int error_){
-			std::cerr<<"Fatal error wihile initializing network ONet..."<<std::endl;
-			return -1;
-		}
+        if(has_tnet_) {
+            try {
+                boost::shared_ptr<caffe::Net<Dtype> > TNet(
+                        new caffe::Net<Dtype>(netpath["tnet"].second, caffe::TEST, 0, NULL));
+                // boost::shared_ptr<caffe::Net<Dtype> > TNet(new caffe::Net<Dtype>(netpath["onet"].second, caffe::TEST, 0, NULL, NULL));
+                TNet_ = TNet;
+                TNet_->CopyTrainedLayersFrom(netpath["tnet"].first);
+            }
+            catch (int error_) {
+                std::cerr << "Fatal error wihile initializing network ONet..." << std::endl;
+                return -1;
+            }
+        }
 		return 0;
 	};
 	//This function initialize a transformer which will transform the data to meet the require of network
@@ -117,32 +123,33 @@ public:
 		boost::shared_ptr<caffe::DataTransformer<Dtype> > tmp_transform(new caffe::DataTransformer<Dtype>(transform_params, caffe::TEST));
 		transformer_ = tmp_transform;
 	};
-	std::vector<std::vector<Dtype> > tracking_hand(const cv::Mat& image, const std::pair<float, cv::Rect> & rect, float threshold = 0.6) {
+	std::vector<std::vector<Dtype> > tracking_hand(const cv::Mat& image, const std::vector<float> & rect, float threshold = 0.6) {
 		//declare the variable to store the bounding box with probability
 		std::vector<std::vector<Dtype> > all_boxes;
-		cv::Mat img(image.rows, image.cols, image.depth());
-		image.copyTo(img);
+        cv::Mat img(image.rows, image.cols, image.depth());
+        image.copyTo(img);
+        cv::transpose(img, img);
 		//If the likehood of the rect belong to a hand under the threshold, we refind it with MTCNN
-		if(rect.first < threshold) {
-			std::cout<<"MTCNN"<<std::endl;
+		if(rect[4] < threshold) {
+            cv::transpose(img, img);
 			all_boxes = detect_face(img);
 			return all_boxes;
 		}
-		//Transfer the rect into std::vector
-		std::vector<Dtype> init_boxes;
-		init_boxes.push_back(rect.second.x);
-		init_boxes.push_back(rect.second.y);
-		init_boxes.push_back(rect.second.x + rect.second.width - 1);
-		init_boxes.push_back(rect.second.y + rect.second.height - 1);
-		all_boxes.push_back(init_boxes);
+//		//Transfer the rect into std::vector
+        all_boxes.push_back(rect);
+//		std::vector<Dtype> init_boxes;
+//		init_boxes.push_back(rect.second.x);
+//		init_boxes.push_back(rect.second.y);
+//		init_boxes.push_back(rect.second.x + rect.second.width - 1);
+//		init_boxes.push_back(rect.second.y + rect.second.height - 1);
+//		all_boxes.push_back(init_boxes);
 		//If there exist tnet, we tracking object with tnet, else we use onet
+//		has_tnet_ = false;
 		if(has_tnet_) {
-			std::cout<<"TNET"<<std::endl;
-			all_boxes = tracking_bboxes(img, all_boxes, 0.7);
+			all_boxes = tracking_bboxes(img, all_boxes, 0.0);
 		}
 		else {
-			std::cout<<"ONET"<<std::endl;
-			all_boxes = output_bboxes(img, all_boxes, 0.6);
+			all_boxes = output_bboxes(img, all_boxes, 0.0);
 		}
 		return all_boxes;
 	}
@@ -152,15 +159,14 @@ public:
 //        input_channels_ = 2;
 		cv::Mat img(image.rows, image.cols, image.depth());
 		image.copyTo(img);
-//		cv::cvtColor(img, img, CV_BGR2RGB);
 		cv::transpose(img, img);
 		std::vector<std::vector<Dtype> > all_boxes;
 		all_boxes = propose_bboxes(img, 0.709, 0.7);
-////        display_faces(img, all_boxes, "pnet", false);
+//        display_faces(img, all_boxes, "pnet", false);
 		all_boxes = refine_bboxes(img, all_boxes, 0.6);
-////        display_faces(img, all_boxes, "rnet", false);
+//        display_faces(img, all_boxes, "rnet", false);
 		all_boxes = output_bboxes(img, all_boxes, 0.6);
-////        display_faces(img, all_boxes, "onet", true);
+//        display_faces(img, all_boxes, "onet", true);
 ////	  	// return alignment_faces(image, all_boxes);
 		return all_boxes;
 	}
@@ -194,11 +200,12 @@ private:
 	std::vector<std::vector<Dtype> > propose_bboxes(cv::Mat& img, const float down_factor, const float threshold) {
 		int height = img.rows;
 		int width = img.cols;
-		float down_m = 12.0/50.0;
+        float cell_size = 12.0;
+		float down_m = cell_size/50.0;
 		float min_size = float(std::min(height, width))*down_m;
 		std::vector<float> scales;
 		int down_times = 0;
-		while(min_size>=12) {
+		while(min_size>=cell_size) {
 			scales.push_back(down_m*std::pow(down_factor, down_times));
 			min_size = min_size*down_factor;
 			down_times++;
@@ -223,7 +230,7 @@ private:
 			std::vector<caffe::Blob<Dtype>*> output_data	 = PNet_->Forward(input_data);
 			std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, threshold, scales[iter], 1);
 
-			std::vector< std::vector<Dtype> > boxes_valid_ = dt_tools.generateBboxes(bboxes_info);
+			std::vector< std::vector<Dtype> > boxes_valid_ = dt_tools.generateBboxes(bboxes_info, cell_size);
 			dt_tools.nonmaximumSuppression(boxes_valid_, 0.5, dt_tools.UNION);
 			all_bboxes.insert(all_bboxes.end(), boxes_valid_.begin(), boxes_valid_.end());
 		}
@@ -317,15 +324,6 @@ private:
 		}
 		dt_tools.nonmaximumSuppression(selected_bboxes_mv, 0.7, dt_tools.MIN);
         selected_bboxes = dt_tools.caliberateBboxes(selected_bboxes_mv);
-		for(size_t iter=0;iter<selected_bboxes_mv.size();iter++) {
-			Dtype region_h = selected_bboxes_mv[iter][2] - selected_bboxes_mv[iter][0] + 1;
-			Dtype region_w = selected_bboxes_mv[iter][3] - selected_bboxes_mv[iter][1] + 1;
-			for(int pt_id=0;pt_id<5;pt_id++) {
-				selected_bboxes[iter].push_back(selected_bboxes_mv[iter][pt_id+10]*region_h + selected_bboxes_mv[iter][0] - 1);
-				selected_bboxes[iter].push_back(selected_bboxes_mv[iter][pt_id+15]*region_w + selected_bboxes_mv[iter][1] - 1);
-			}
-		}
-
 		return selected_bboxes;
 	}
 
@@ -349,11 +347,11 @@ private:
 		std::vector<caffe::Blob<Dtype>*> input_data = prepare_data(img, box_img, hs, ws, channels, input_blob);
 		modify_network_input(TNet_, num_boxes, channels, hs, ws);
 		std::vector<caffe::Blob<Dtype>*> output_data = TNet_->Forward(input_data);
-		std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, 0.0, 1.0, 2);
+		std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, 0.0, 1.0, 4);
 		std::vector<std::vector<Dtype> > selected_bboxes_mv;
 		all_bboxes[0][4] = bboxes_info[0][0];
 		std::vector<Dtype> boxandmv = all_bboxes[0];
-		boxandmv.push_back(bboxes_info[0][1]);//6
+        boxandmv.push_back(bboxes_info[0][1]);//6
 		boxandmv.push_back(bboxes_info[0][2]);
 		boxandmv.push_back(bboxes_info[0][3]);
 		boxandmv.push_back(bboxes_info[0][4]);//9
@@ -402,17 +400,25 @@ private:
 		  			for(int ind_w = 0;ind_w<width_out;ind_w++) {
 		  				Dtype point_v;
 			  			point_v = *(ptr_prob+ ( (ind_n*num_channels_out + ind_c)*height_out +ind_h)*width_out + ind_w);
+//                        if(whichnet == 4) {
+//                            float tmp = *(ptr_prob+ ( (ind_n*num_channels_out + 0)*height_out +ind_h)*width_out + ind_w);
+//                            std::printf("%f VS %f\n", point_v, tmp);
+//                        }
 						if(point_v>=threshold) {
 	  						valid++;
 		  					std::vector<Dtype> bbox_information;
 		  					bbox_information.push_back(point_v);//0
 		  					point_v = *(ptr_bxrg+ ( (ind_n*num_channels_out_r + 0)*height_out_r +ind_h)*width_out_r + ind_w );
+//							if(whichnet == 4) std::printf("%f ", point_v);
 		 					bbox_information.push_back(point_v);//1
 		 					point_v = *(ptr_bxrg+ ( (ind_n*num_channels_out_r + 1)*height_out_r +ind_h)*width_out_r + ind_w );
+//							if(whichnet == 4) std::printf("%f ", point_v);
 	  						bbox_information.push_back(point_v);//2
 	 						point_v = *(ptr_bxrg+ ( (ind_n*num_channels_out_r + 2)*height_out_r +ind_h)*width_out_r + ind_w );
+//							if(whichnet == 4) std::printf("%f ", point_v);
 	  						bbox_information.push_back(point_v);//3
 		  					point_v = *(ptr_bxrg+ ( (ind_n*num_channels_out_r + 3)*height_out_r +ind_h)*width_out_r + ind_w );
+//							if(whichnet == 4) std::printf("%f\n", point_v);
 		  					bbox_information.push_back(point_v);//4
 		  					bbox_information.push_back(float(ind_h+1));//5
 		  					bbox_information.push_back(float(ind_w+1));//6

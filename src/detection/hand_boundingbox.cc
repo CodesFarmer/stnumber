@@ -6,7 +6,7 @@
 
 extern "C" {
 boost::shared_ptr<FaceDetector<float> > detector;
-std::pair<float, cv::Rect> init_rect_;
+std::vector<float> init_rect_;
 int initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &modelpath, int channels) {
 //    std::vector<float> mean_value(1, 17.2196);
 //    float img2net_scale = 0.0125;
@@ -18,11 +18,12 @@ int initialize_detector(const std::map<std::string, std::pair<std::string, std::
         return -1;
     }
     detector->initialize_transformer(img2net_scale, mean_value);
-    init_rect_.first = 0;
-    init_rect_.second.x = 0;
-    init_rect_.second.y = 0;
-    init_rect_.second.width = 0;
-    init_rect_.second.height = 0;
+    init_rect_.resize(5, 0);
+//    init_rect_.first = 0;
+//    init_rect_.second.x = 0;
+//    init_rect_.second.y = 0;
+//    init_rect_.second.width = 0;
+//    init_rect_.second.height = 0;
 }
 //Get the bounding box
 cv::Rect get_hand_bbx(const cv::Mat &image) {
@@ -66,8 +67,11 @@ cv::Rect get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Mat &img_dp) {
     hand_rect.y = y_l;
     hand_rect.width = x_r - x_l + 1;
     hand_rect.height = y_r - y_l + 1;
-    init_rect_.first = hand_bbx[0][4];
-    init_rect_.second = hand_rect;
+    hand_bbx[0][0] = x_l;
+    hand_bbx[0][1] = y_l;
+    hand_bbx[0][2] = x_r;
+    hand_bbx[0][3] = y_r;
+    init_rect_ = hand_bbx[0];
     return hand_rect;
 }
 

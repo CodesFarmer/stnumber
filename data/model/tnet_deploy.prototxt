@@ -173,32 +173,6 @@ layer {
 #############################################Convolution5################################################
 layer {
 	bottom: "conv4"
-	top: "conv5_1"
-	type: "Convolution"
-	name: "conv5_1"
-	convolution_param {
-		num_output: 2
-		kernel_size: 3
-		stride: 1
-		weight_filler {
-			type: "xavier"
-		}
-		bias_filler {
-			type: "constant"
-			value: 0
-		}
-	}
-	param {
-		lr_mult: 1
-		decay_mult: 1
-	}
-	param {
-		lr_mult: 1
-		decay_mult: 0
-	}
-}
-layer {
-	bottom: "conv4"
 	top: "conv5_2"
 	type: "Convolution"
 	name: "conv5_2"
@@ -221,6 +195,24 @@ layer {
 	param {
 		lr_mult: 1
 		decay_mult: 0
+	}
+}
+layer {
+	bottom: "conv4"
+	top: "conv5_1"
+	type: "Convolution"
+	name: "conv5_1"
+	convolution_param {
+		num_output: 2
+		kernel_size: 3
+		stride: 1
+		weight_filler {
+			type: "xavier"
+		}
+		bias_filler {
+			type: "constant"
+			value: 0
+		}
 	}
 }
 

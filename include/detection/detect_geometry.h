@@ -23,7 +23,7 @@ public:
         }
     };
 public:
-  std::vector< std::vector<Ntype> > generateBboxes(std::vector<std::vector<Ntype> >);
+  std::vector< std::vector<Ntype> > generateBboxes(std::vector<std::vector<Ntype> >, float cellsize = 12);
   void nonmaximumSuppression(std::vector<std::vector<Ntype> >&, float , NMSType);
   std::vector<std::vector<Ntype> > bboxes2patches(std::vector<std::vector<Ntype> >&, Ntype, Ntype);
   void turn2rect(std::vector<std::vector<Ntype> >&);

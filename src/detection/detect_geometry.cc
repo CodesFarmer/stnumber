@@ -1,7 +1,7 @@
 #include "detect_geometry.h"
 
-std::vector< std::vector<Ntype> > DetectTools::generateBboxes(std::vector<std::vector<Ntype> > boxes_probability) {
-	float cellsize = 12;
+std::vector< std::vector<Ntype> > DetectTools::generateBboxes(std::vector<std::vector<Ntype> > boxes_probability, float cellsize) {
+//	float cellsize = 12;
 	float stride = 2;
 
 	std::vector< std::vector<Ntype> > bboxes;
