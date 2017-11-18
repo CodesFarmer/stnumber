@@ -1,4 +1,4 @@
-set(CMAKE_PREFIX_PATH "$ENV{UNTOUCH_LOCAL}/Thirdparty/free/x86_64-linux/opencv-3.1.0;${CMAKE_PREFIX_PATH}")
+set(CMAKE_PREFIX_PATH "$ENV{UNTOUCH_LOCAL}/Thirdparty/free/x86_64-linux/opencv-3.1.0/build;${CMAKE_PREFIX_PATH}")
 set(WITH_OPENCV ON "Compile with OpenCV")
 set(USE_OPENCV "Build with OpenCV support" ON)
 find_package(OpenCV)

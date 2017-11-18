@@ -40,10 +40,18 @@ add_library(handdetect SHARED
 set_target_properties(handdetect PROPERTIES OUTPUT_NAME "handdetect")
 target_link_libraries(handdetect ${DEST_LINK_TARGETS} ctools)
 
+
 set(CT_INCLUDE_INSTALL_PATH ${CMAKE_INSTALL_PREFIX})
 set(CT_LIB_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/lib)
 set(CMAKE_INSTALL_RPATH ${CT_LIB_INSTALL_PATH})
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH true)
+
+file(GLOB models
+	"data/model/*.caffemodel"
+	"data/model/*.prototxt"
+)
+set(CMAKE_MODEL_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/data/model)
+install(FILES ${models} DESTINATION ${CMAKE_MODEL_INSTALL_PATH})
 install(TARGETS ctools DESTINATION ${CMAKE_INSTALL_RPATH})
 install(TARGETS handdetect DESTINATION ${CMAKE_INSTALL_RPATH})
 install(DIRECTORY include DESTINATION ${CT_INCLUDE_INSTALL_PATH})
