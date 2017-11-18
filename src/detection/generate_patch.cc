@@ -557,7 +557,7 @@ void GeneratePatch::create_destination(const std::string &dst_path, int img_size
         mean_value.push_back(0.0f);
         shrink_ratio.push_back(0.0125f);
         shrink_ratio.push_back(0.00083f);
-        hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 100);
+        hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 1000);
         hdf5_writer_->create_hdf5(dst_path);
         hdf5_writer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
         hdf5_writer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");

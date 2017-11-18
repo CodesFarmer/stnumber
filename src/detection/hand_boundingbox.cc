@@ -34,7 +34,7 @@ cv::Rect get_hand_bbx(const cv::Mat &image) {
     image.convertTo(tmpimg, CV_32FC1);
     tmpimg = (tmpimg - mean_ir)*scale_ir;
 
-    std::vector<std::vector<float> > hand_bbx = detector->detect_face(tmpimg);
+    std::vector<std::vector<float> > hand_bbx = detector->tracking_hand(tmpimg, init_rect_, 0.95);
     cv::Rect hand_rect(-1, -1, -1, -1);
     if(hand_bbx.size() == 0) return hand_rect;
     int x_l = std::max( hand_bbx[0][0], 0.0f );
@@ -45,6 +45,11 @@ cv::Rect get_hand_bbx(const cv::Mat &image) {
     hand_rect.y = y_l;
     hand_rect.width = x_r - x_l + 1;
     hand_rect.height = y_r - y_l + 1;
+    hand_bbx[0][0] = x_l;
+    hand_bbx[0][1] = y_l;
+    hand_bbx[0][2] = x_r;
+    hand_bbx[0][3] = y_r;
+    init_rect_ = hand_bbx[0];
     return hand_rect;
 }
 
@@ -55,7 +60,6 @@ cv::Rect get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Mat &img_dp) {
     pre_processing(img_ir, img_dp, image);
 
     //Forward pass the neural network and get the bounding boxes
-    //, const std::pair<float, cv::Rect> & rect, float threshold = 0.6
     std::vector<std::vector<float> > hand_bbx = detector->tracking_hand(image, init_rect_, 0.6);
     cv::Rect hand_rect(-1, -1, -1, -1);
     if(hand_bbx.size() == 0) return hand_rect;
@@ -82,6 +86,7 @@ bool pre_processing(const cv::Mat &img_ir, const cv::Mat &img_dp, cv::Mat & outp
     float scale_dp = 0.00083f;
     cv::Mat tmpimg_ir = img_ir.clone();
     cv::Mat tmpimg_dp = img_dp.clone();
+    cv::bitwise_and(tmpimg_dp, 0x1FFF, tmpimg_dp);
     cv::Mat img_ir_float(tmpimg_ir.size(), CV_32FC1);
     cv::Mat img_dp_float(tmpimg_dp.size(), CV_32FC1);
     tmpimg_ir.convertTo(img_ir_float, CV_32FC1);

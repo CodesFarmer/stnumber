@@ -137,12 +137,6 @@ public:
 		}
 //		//Transfer the rect into std::vector
         all_boxes.push_back(rect);
-//		std::vector<Dtype> init_boxes;
-//		init_boxes.push_back(rect.second.x);
-//		init_boxes.push_back(rect.second.y);
-//		init_boxes.push_back(rect.second.x + rect.second.width - 1);
-//		init_boxes.push_back(rect.second.y + rect.second.height - 1);
-//		all_boxes.push_back(init_boxes);
 		//If there exist tnet, we tracking object with tnet, else we use onet
 //		has_tnet_ = false;
 		if(has_tnet_) {
