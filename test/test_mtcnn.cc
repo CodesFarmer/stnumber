@@ -16,11 +16,11 @@ int main(int argc, char * argv[]) {
     bool isrotate = false;
     if(!ironly) {
         //Depth and Infrared images both
-        modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_iter_200000.caffemodel"),
+        modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_dpir.caffemodel"),
                                            models_dir + std::string("pnet_deploy.prototxt"));
-        modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_iter_200000.caffemodel"),
+        modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_dpir.caffemodel"),
                                            models_dir + std::string("rnet_deploy.prototxt"));
-        modelpath["onet"] = std::make_pair(models_dir + std::string("onet_iter_200000.caffemodel"),
+        modelpath["onet"] = std::make_pair(models_dir + std::string("onet_dpir.caffemodel"),
                                            models_dir + std::string("onet_deploy.prototxt"));
 //        modelpath["tnet"] = std::make_pair(models_dir + std::string("tnet.caffemodel"),
 //                                           models_dir + std::string("tnet_deploy.prototxt"));

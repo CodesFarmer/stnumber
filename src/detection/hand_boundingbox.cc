@@ -7,6 +7,8 @@
 extern "C" {
 boost::shared_ptr<FaceDetector<float> > detector;
 std::vector<float> init_rect_;
+double t_start = 0.0f;
+double t_end = 0.0f;
 int initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &modelpath, int channels) {
 //    std::vector<float> mean_value(1, 17.2196);
 //    float img2net_scale = 0.0125;
@@ -59,8 +61,15 @@ cv::Rect get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Mat &img_dp) {
     cv::Mat image;
     pre_processing(img_ir, img_dp, image);
 
+    //Reset the probability of previous bounding box
+    t_end = (double)cvGetTickCount();
+    if((t_end - t_start)/(cvGetTickFrequency()*500)  > 1000.0f) {
+        std::printf("TEST\n");
+        init_rect_[4] = 0.0f;
+        t_start = t_end;
+    }
     //Forward pass the neural network and get the bounding boxes
-    std::vector<std::vector<float> > hand_bbx = detector->tracking_hand(image, init_rect_, 0.6);
+    std::vector<std::vector<float> > hand_bbx = detector->tracking_hand(image, init_rect_, 0.8);
     cv::Rect hand_rect(-1, -1, -1, -1);
     if(hand_bbx.size() == 0) return hand_rect;
     int x_l = std::max( hand_bbx[0][0], 0.0f );

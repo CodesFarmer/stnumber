@@ -313,9 +313,9 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
             }
         }
 
-//        if(bounding_boxes.size() > 0 && hand_bbx.size() == 0) {
-//            create_patches(img_path, bounding_boxes, img_size, dst_path);
-//        }
+        if(bounding_boxes.size() > 0 && hand_bbx.size() == 0) {
+            create_patches(img_path, bounding_boxes, img_size, dst_path);
+        }
         std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
                   << std::flush;
         cur_iter++;
@@ -388,10 +388,10 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
         int y_l1 = xs_l;
         int x_r1 = ys_r;
         int y_r1 = xs_r;
-        offset_x1 = (yg_l - x_l1) / float(x_r1 - x_l1);
-        offset_y1 = (xg_l - y_l1) / float(y_r1 - y_l1);
-        offset_x2 = (yg_r - x_r1) / float(x_r1 - x_l1);
-        offset_y2 = (xg_r - y_r1) / float(y_r1 - y_l1);
+        offset_x1 = (yg_l - x_l1) / (x_r1 - x_l1 + bias);
+        offset_y1 = (xg_l - y_l1) / (y_r1 - y_l1 + bias);
+        offset_x2 = (yg_r - x_r1) / (x_r1 - x_l1 + bias);
+        offset_y2 = (xg_r - y_r1) / (y_r1 - y_l1 + bias);
         aug_id++;
         std::sprintf(name_suffix, "_%02d.png", aug_id);
         img_name = name_prefix + std::string(name_suffix);
@@ -416,10 +416,10 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
         int y_l2 = image.rows - ys_r;
         int x_r2 = xs_r;
         int y_r2 = image.rows - ys_l;
-        offset_x1 = (xg_l - x_l2) / float(x_r2 - x_l2);
-        offset_y1 = (image.rows - yg_r - y_l2) / float(y_r2 - y_l2);
-        offset_x2 = (xg_r - x_l2) / float(x_r2 - x_l2);
-        offset_y2 = (image.rows - yg_l - y_l2) / float(y_r2 - y_l2);
+        offset_x1 = (xg_l - x_l2) / (x_r2 - x_l2 + bias);
+        offset_y1 = (image.rows - yg_r - y_l2) / (y_r2 - y_l2 + bias);
+        offset_x2 = (xg_r - x_l2) / (x_r2 - x_l2 + bias);
+        offset_y2 = (image.rows - yg_l - y_l2) / (y_r2 - y_l2 + bias);
         aug_id++;
         std::sprintf(name_suffix, "_%02d.png", aug_id);
         img_name = name_prefix + std::string(name_suffix);
@@ -445,9 +445,9 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
         int y_l3 = xs_l;
         int x_r3 = image.rows - ys_l;
         int y_r3 = xs_r;
-        offset_x1 = (image.rows - yg_r - x_l3) / float(x_r3 - x_l3);
-        offset_y1 = (xg_l - y_l3) / float(y_r3 - y_l3);
-        offset_x2 = (image.rows - yg_l - x_r3) / float(x_r3 - x_l3);
+        offset_x1 = (image.rows - yg_r - x_l3) / float(x_r3 - x_l3 + bias);
+        offset_y1 = (xg_l - y_l3) / float(y_r3 - y_l3 + bias);
+        offset_x2 = (image.rows - yg_l - x_r3) / float(x_r3 - x_l3 + bias);
         offset_y2 = (xg_r - y_r3) / float(y_r3 - y_l3);
         aug_id++;
         std::sprintf(name_suffix, "_%02d.png", aug_id);

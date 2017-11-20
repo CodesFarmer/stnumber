@@ -131,6 +131,7 @@ public:
         cv::transpose(img, img);
 		//If the likehood of the rect belong to a hand under the threshold, we refind it with MTCNN
 		if(rect[4] < threshold) {
+			std::printf("MTCNN\n");
             cv::transpose(img, img);
 			all_boxes = detect_face(img);
 			return all_boxes;
@@ -143,7 +144,11 @@ public:
 			all_boxes = tracking_bboxes(img, all_boxes, 0.0);
 		}
 		else {
+			std::printf("ONET\n");
+//            double t = (double)cvGetTickCount();
 			all_boxes = output_bboxes(img, all_boxes, 0.0);
+//            t = (double)cvGetTickCount() - t;
+//            printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
 		}
 		return all_boxes;
 	}
@@ -155,13 +160,22 @@ public:
 		image.copyTo(img);
 		cv::transpose(img, img);
 		std::vector<std::vector<Dtype> > all_boxes;
+//        double t = (double)cvGetTickCount();
 		all_boxes = propose_bboxes(img, 0.709, 0.7);
-//        display_faces(img, all_boxes, "pnet", false);
+//        t = (double)cvGetTickCount() - t;
+//        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
+////        display_faces(img, all_boxes, "pnet", false);
+//        t = (double)cvGetTickCount();
 		all_boxes = refine_bboxes(img, all_boxes, 0.6);
-//        display_faces(img, all_boxes, "rnet", false);
+//        t = (double)cvGetTickCount() - t;
+//        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
+////        display_faces(img, all_boxes, "rnet", false);
+//        t = (double)cvGetTickCount();
 		all_boxes = output_bboxes(img, all_boxes, 0.6);
-//        display_faces(img, all_boxes, "onet", true);
-////	  	// return alignment_faces(image, all_boxes);
+//        t = (double)cvGetTickCount() - t;
+//        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
+////        display_faces(img, all_boxes, "onet", true);
+//////	  	// return alignment_faces(image, all_boxes);
 		return all_boxes;
 	}
 private:
@@ -222,6 +236,7 @@ private:
 
 			modify_network_input(PNet_, 1, channels, hs, ws);
 			std::vector<caffe::Blob<Dtype>*> output_data	 = PNet_->Forward(input_data);
+//            std::printf("Input size: %d, %d\n", hs, ws);
 			std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, threshold, scales[iter], 1);
 
 			std::vector< std::vector<Dtype> > boxes_valid_ = dt_tools.generateBboxes(bboxes_info, cell_size);
@@ -302,6 +317,7 @@ private:
 		std::vector<caffe::Blob<Dtype>*> output_data = ONet_->Forward(input_data);
 		std::vector<std::vector<Dtype> > bboxes_info = blob2vector(output_data, 0.0, 1.0, 2);
 		std::vector<std::vector<Dtype> > selected_bboxes_mv;
+//        std::printf("The number of onet input is %d\n", num_boxes);
 		for(size_t iter = 0;iter<num_boxes;iter++) {
 			if(bboxes_info[iter][0]>threshold) {
 				all_bboxes[iter][4] = bboxes_info[iter][0];
