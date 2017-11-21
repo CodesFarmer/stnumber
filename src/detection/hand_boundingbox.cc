@@ -63,7 +63,7 @@ cv::Rect get_hand_bbx_irdp(const cv::Mat &img_ir, const cv::Mat &img_dp) {
 
     //Reset the probability of previous bounding box
     t_end = (double)cvGetTickCount();
-    if((t_end - t_start)/(cvGetTickFrequency()*500)  > 1000.0f) {
+    if((t_end - t_start)/(cvGetTickFrequency()*500)  > 500.0f) {
         std::printf("TEST\n");
         init_rect_[4] = 0.0f;
         t_start = t_end;

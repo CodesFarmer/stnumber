@@ -194,15 +194,23 @@ void Mat2H5::transfer2array(float *dst_array, const std::vector<cv::Mat> &source
             for(int iter_h = 0; iter_h<height; iter_h++) {
                 for(int iter_w = 0; iter_w<width; iter_w++) {
                     int index = ( (iter_n*num_channels + iter_c)*height + iter_h)*width + iter_w;
-                    float elem = (img_tmp.at<cv::Vec2f>(iter_h, iter_w)[iter_c] - mean_value_[iter_c])*shrink_ratio_[iter_c];
-//                    std::printf("%d %d %d\n", iter_h, iter_w, iter_c);
+                    float elem = 0;
+                    if(img_tmp.channels() != 2) {
+                        elem = (img_tmp.at<float>(iter_h, iter_w, iter_c) - mean_value_[iter_c]) *
+                               shrink_ratio_[iter_c];
+                    }
+                    else if(img_tmp.channels() == 2) {
+                        elem = (img_tmp.at<cv::Vec2f>(iter_h, iter_w)[iter_c] - mean_value_[iter_c]) *
+                                     shrink_ratio_[iter_c];
+                    }
+//                    std::printf("(%d %d %d,", iter_h, iter_w, iter_c);
 //                    float elem = img_tmp.at<cv::Vec2f>(iter_h, iter_w)[iter_c];
                     *(dst_array + index) = elem;
-//                    if(iter_c == 1) std::printf("%f ", elem);
+//                    if(iter_c == 0) std::printf("%f)  ", elem);
                 }
-//                if(iter_c == 1) std::printf("\n");
+//                if(iter_c == 0) std::printf("--\n");
             }
-//            if(iter_c == 1) std::printf("=====================================================================================\n");
+//            if(iter_c == 0) std::printf("=====================================================================================\n");
         }
     }
 //    std::printf("Convert Completed...\n");

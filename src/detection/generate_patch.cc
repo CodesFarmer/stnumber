@@ -535,7 +535,7 @@ void GeneratePatch::create_destination(const std::string &dst_path, int img_size
         //create HDF5 file
         //Setup the dimension of input data
         std::vector<int> data_dimension;
-        data_dimension.push_back(2);//num of batches
+        data_dimension.push_back(1);//num of batches
         data_dimension.push_back(1);//channels
 #ifdef USE_DEPTH
         data_dimension[data_dimension.size()-1] = 2;//channels

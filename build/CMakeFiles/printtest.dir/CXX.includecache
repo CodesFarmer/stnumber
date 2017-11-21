@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/common/filepath.h
+string
+-
+iostream
+-
+fstream
+-
+stdarg.h
+-
+
+/home/slam/DepthGesture/stnumber/test/test_fp.cc
+iostream
+-
+string
+-
+filepath.h
+/home/slam/DepthGesture/stnumber/test/filepath.h
+
