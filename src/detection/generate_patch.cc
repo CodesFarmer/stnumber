@@ -204,7 +204,11 @@ void GeneratePatch::create_positive_samples(cv::Mat &img, std::vector<cv::Rect> 
 void GeneratePatch::initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > & model_path,
                                         const float img2net_scale,
                                         const std::vector<float> mean_value) {
-    detector_ = boost::make_shared<FaceDetector<float> >(2);
+    int channels = 1;
+#ifdef USE_DEPTH
+    channels = 2;
+#endif
+    detector_ = boost::make_shared<FaceDetector<float> >(channels);
     detector_->initialize_network(model_path);
     detector_->initialize_transformer(img2net_scale, mean_value);
 }
@@ -248,7 +252,7 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
         img_ir_float = (img_ir_float - mean_ir)*scale_ir;
 
         cv::Mat image = image_ir.clone();
-        cv::Mat image_float = image_ir.clone();
+        cv::Mat image_float = img_ir_float.clone();
 #ifdef USE_DEPTH
         //Read the depth image
         FILEPARTS::replace_string(img_path, "cam0", "dep0");
@@ -302,13 +306,13 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
                     char name_suffix[32];
                     std::sprintf(name_suffix, "_%03d", bbx_id);
                     std::string img_name = positive_path_posi + std::string(name_suffix);
-                    write_to_disk(image, img_size, img_name, 1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), bounding_boxes[index]);
+                    write_to_disk(image, img_size, img_name, 1, true, hand_rect, bounding_boxes[index]);
                 }//if it is a part appearance sample
                 else if(patch_iou >= part_IOU_) {
                     char name_suffix[32];
                     std::sprintf(name_suffix, "_%03d", bbx_id);
                     std::string img_name = positive_path_part + std::string(name_suffix);
-                    write_to_disk(image, img_size, img_name, 1, true, cv::Rect(x_l, y_l, x_r - x_l, y_r - y_l), bounding_boxes[index]);
+                    write_to_disk(image, img_size, img_name, 1, true, hand_rect, bounding_boxes[index]);
                 }
             }
         }
@@ -358,6 +362,8 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
     std::sprintf(name_suffix, "_%02d.png", aug_id);
     std::string img_name = name_prefix + std::string(name_suffix);
     cv::Mat img_patch = image(rect_sample).clone();
+//    cv::imshow("test", img_patch);
+//    cv::waitKey(0);
     cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
 //    cv::imwrite(img_name, img_patch);
     float offset_x1 = (xg_l - xs_l) / (xs_r - xs_l + bias);
@@ -376,7 +382,6 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
     else if(save_mode_ == HDF5) {
         save2hdf5(img_patch, labels);
     }
-
 
     //Augment the data into 4 directions
     if(augmentation) {
