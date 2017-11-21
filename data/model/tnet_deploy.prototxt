@@ -13,7 +13,7 @@ layer {
 	type: "Convolution"
 	name: "conv1"
 	convolution_param {
-		num_output: 16
+		num_output: 32
 		kernel_size: 3
 		stride: 1
 		weight_filler {
@@ -60,7 +60,7 @@ layer {
 	type: "Convolution"
 	name: "conv2"
 	convolution_param {
-		num_output: 32
+		num_output: 64
 		kernel_size: 3
 		stride: 1
 		weight_filler {
@@ -107,7 +107,7 @@ layer {
 	type: "Convolution"
 	name: "conv3"
 	convolution_param {
-		num_output: 64
+		num_output: 128
 		kernel_size: 3
 		stride: 1
 		weight_filler {
@@ -142,7 +142,7 @@ layer {
 	type: "Convolution"
 	name: "conv4"
 	convolution_param {
-		num_output: 128
+		num_output: 256
 		kernel_size: 3
 		stride: 1
 		weight_filler {
