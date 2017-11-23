@@ -40,3 +40,7 @@ You can refer examples in test/test\_patch.cc for more details
 2.The tools also support write the data into HDF5 database, you can refer the test/test\_hdf5.cc to create your HDF5 file  
   
 3.You can extract the output from any layer of convolutional neural network(examples at test/test\_cnn.cc)  
+
+#### Attentation!!!  
+For \*net\_ir1.caffemodel and \*net\_ir2.caffemodel model, we employ different mean value for normalization  
+The mean value for ir1 is 17.2196, while for ir2 it is 0, the down scales are same.  
