@@ -3,13 +3,13 @@
 
 int main(int argc, char * argv[]) {
     std::vector<int> data_dimension;
-    data_dimension.push_back(2);//num of batches
+    data_dimension.push_back(1);//num of batches
     data_dimension.push_back(1);//channels
     data_dimension.push_back(24);//height
     data_dimension.push_back(12);//width
 
     std::vector<int> label_dimension;
-    label_dimension.push_back(2);
+    label_dimension.push_back(1);
     label_dimension.push_back(4);
 
     std::vector<float> mean_value(1, 17.2196f);
