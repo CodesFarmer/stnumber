@@ -8,6 +8,9 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
+#define _CROP_NUM 10
+#define _PAD_PIXEL 16
+
 int main(int argc, char *argv[]) {
     std::vector<int> data_dimension;
     data_dimension.push_back(1);//num of batches
@@ -38,7 +41,7 @@ int main(int argc, char *argv[]) {
         transfer->write_tuples(image, std::vector<float>(1, label));
         //select 2/3 data for augmentation
         int rand_num = rand()%3;
-        std::cout<<image.size()<<" "<<label<<std::endl;
+//        std::cout<<image.size()<<" "<<label<<std::endl;
         if(rand_num != 0) {
             //transpose the image
             cv::Mat image_tr;
@@ -53,6 +56,29 @@ int main(int argc, char *argv[]) {
             cv::transpose(image, image_tf);
             cv::flip(image_tf, image_tf, 1);
             transfer->write_tuples(image_tf, std::vector<float>(1, label));
+            //if the image is fist, we crop it and augment it
+            if(label == 2) {
+//                int is_crop = rand()%2;
+//                if(is_crop == 0) {
+                    //at first, we padding the image with 16 pixels at each edge
+                    cv::Mat image_pad(image.rows + _PAD_PIXEL*2, image.cols + _PAD_PIXEL*2, CV_8UC1);
+                    cv::randu(image_pad, cv::Scalar(0,0,0), cv::Scalar(100,100,100));
+                    cv::Rect ori_bbx(_PAD_PIXEL, _PAD_PIXEL, image.rows, image.cols);
+                    image_pad(ori_bbx) = image;
+                    int iter = 0;
+                    while(iter < _CROP_NUM) {
+                        //We generate a number for crop the images
+                        int shift_offset_x = rand()%33 - 16;
+                        int shift_offset_y = rand()%33 - 16;
+                        if(std::abs(shift_offset_x) > 4 && std::abs(shift_offset_y) > 4) {
+                            cv::Rect crop_bbx(_PAD_PIXEL + shift_offset_x, _PAD_PIXEL + shift_offset_y, image.rows, image.cols);
+                            cv::Mat image_crop = image_pad(crop_bbx).clone();
+                            transfer->write_tuples(image_crop, std::vector<float>(1, label));
+                            iter++;
+                        }
+                    }
+//                }
+            }
         }
     }
     input_fid.close();
