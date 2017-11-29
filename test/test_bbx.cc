@@ -1,13 +1,28 @@
+#define GOOGLE_STRIP_LOG 0
 #include "hand_boundingbox.h"
 #include <fstream>
 
 int main(int argc, char * argv[]) {
+    std::freopen("/ff/null", "w", stderr);
+    std::freopen("/ff/null", "w", stdout);
+////    char environment_variable[200] = {"GLOG_minloglevel=3"};
+////    std::cout<<environment_variable<<std::endl;
+////    putenv(environment_variable);
+////    char * value;
+////    value = getenv ("GLOG_minloglevel");
+////    std::cout<<value<<std::endl;
+////    getchar();
+//    std::system("export GLOG_minloglevel=\"2\"");
+//    char * value;
+//    value = getenv ("GLOG_minloglevel");
+//    std::cout<<value<<std::endl;
+
     std::string imgs_path(argv[1]);
     std::map<std::string, std::pair<std::string, std::string> > modelpath;
     std::string models_dir = "../data/model/";
-    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet_1.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
-    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet_1.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
-    modelpath["onet"] = std::make_pair(models_dir + std::string("onet_1.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
+    modelpath["pnet"] = std::make_pair(models_dir + std::string("pnet.caffemodel"), models_dir+std::string("pnet_deploy.prototxt"));
+    modelpath["rnet"] = std::make_pair(models_dir + std::string("rnet.caffemodel"), models_dir+std::string("rnet_deploy.prototxt"));
+    modelpath["onet"] = std::make_pair(models_dir + std::string("onet.caffemodel"), models_dir+std::string("onet_deploy.prototxt"));
     initialize_detector(modelpath);
 
     std::ifstream input_fid;
