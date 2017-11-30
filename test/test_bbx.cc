@@ -5,17 +5,6 @@
 int main(int argc, char * argv[]) {
     std::freopen("/ff/null", "w", stderr);
     std::freopen("/ff/null", "w", stdout);
-////    char environment_variable[200] = {"GLOG_minloglevel=3"};
-////    std::cout<<environment_variable<<std::endl;
-////    putenv(environment_variable);
-////    char * value;
-////    value = getenv ("GLOG_minloglevel");
-////    std::cout<<value<<std::endl;
-////    getchar();
-//    std::system("export GLOG_minloglevel=\"2\"");
-//    char * value;
-//    value = getenv ("GLOG_minloglevel");
-//    std::cout<<value<<std::endl;
 
     std::string imgs_path(argv[1]);
     std::map<std::string, std::pair<std::string, std::string> > modelpath;
