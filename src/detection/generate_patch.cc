@@ -16,6 +16,12 @@ void GeneratePatch::generate_patches_crop(std::string filename, int img_size, st
         input_fid>>file_path;
         input_fid>>img_name;
         bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
+        //if there exist two or more bounding boxes, we think it is a morbid bounding boxes
+//        if(bounding_boxes.size() > 1) continue;
+        //if multi bbxes, we think the last one is the ground truth
+        while(bounding_boxes.size() > 1) {
+            bounding_boxes.erase(bounding_boxes.begin());
+        }
         img_path = file_path + "/cam0/" + img_name + ".png";
         if(access(img_path.c_str(), F_OK) == -1) {
             img_path = file_path + "/cam0/" + img_name + ".jpg";
@@ -234,6 +240,10 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
         input_fid>>file_path;
         input_fid>>img_name;
         bounding_boxes = get_bounding_boxes(file_path + "/xml/" + img_name + ".xml");
+        while(bounding_boxes.size() > 1) {
+            bounding_boxes.erase(bounding_boxes.begin());
+        }
+
         img_path = file_path + "/cam0/" + img_name + ".png";
 
         if(access(img_path.c_str(), F_OK) == -1) {
@@ -291,6 +301,9 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
             int x_r = std::min( hand_bbx[bbx_id][2], float(image.cols-1) );
             int y_r = std::min( hand_bbx[bbx_id][3], float(image.rows-1) );
             cv::Rect hand_rect(x_l, y_l, x_r - x_l + 1, y_r - y_l + 1);
+//            cv::rectangle(image, hand_rect, cv::Scalar(255));
+//            cv::imshow("test", image);
+//            cv::waitKey(0);
             int index;
             float patch_iou = GEOMETRYTOOLS::regionsIOU(bounding_boxes, hand_rect, index);
 

@@ -142,7 +142,9 @@ std::vector<std::vector<Ntype> > DetectTools::caliberateBboxes(std::vector<std::
 		bbox.push_back(bboxes_mv[iter][3] + bboxes_mv[iter][9]*w_b);
 		bbox.push_back(bboxes_mv[iter][4]);
 		bbox.push_back( (bbox[2]-bbox[0]+1)*(bbox[3]-bbox[1]+1) );
-		adjusted_bboxes.push_back(bbox);
+		if(bbox[0] < bbox[2] && bbox[1] < bbox[3]) {
+			adjusted_bboxes.push_back(bbox);
+		}
 	}
 	return adjusted_bboxes;
 }

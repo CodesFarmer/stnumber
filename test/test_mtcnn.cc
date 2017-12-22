@@ -42,8 +42,13 @@ int main(int argc, char * argv[]) {
     if(!ironly) initialize_detector(modelpath, 2);
     else initialize_detector(modelpath, 1);
     int testnum = 0;
+    double time_start = (double)cvGetTickCount();
+    double time_end = 0.0;
     while(!input_fid.eof() && jter <1000) {
         input_fid>>img_name;
+        time_end = (double)cvGetTickCount();
+        while((time_end - time_start)/(cvGetTickFrequency()*1000) < 50.0f) time_end = (double)cvGetTickCount();
+        time_start = time_end;
         cv::Mat image_ir = cv::imread(img_name, CV_8UC1);
         if(image_ir.empty()) continue;
         FILEPARTS::replace_string(img_name, "cam0", "dep0");
