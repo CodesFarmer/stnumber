@@ -27,9 +27,15 @@ std::vector<cv::Rect> get_bounding_boxes(std::string file_xml) {
             else valid = false;
             if(point != NULL) {
                 pt = point->FirstChildElement("x")->GetText();
-                rect.width = std::atoi(pt) - rect.x;
+                int x2 = std::atoi(pt);
                 pt = point->FirstChildElement("y")->GetText();
-                rect.height = std::atoi(pt) - rect.y;
+                int y2 = std::atoi(pt);
+                int x1 = std::min(rect.x, x2);
+                int y1 = std::min(rect.y, y2);
+                rect.width = std::abs(x2 - rect.x);
+                rect.height = std::abs(y2 - rect.y);
+                rect.x = x1;
+                rect.y = y1;
             }
             else valid = false;
         }

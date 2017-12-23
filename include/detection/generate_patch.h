@@ -49,6 +49,7 @@ private:
     void save2hdf5(const cv::Mat & image, const std::vector<float> label);
     void save2disk(const cv::Mat & image, const std::vector<float> label, const std::string &);
     void create_destination(const std::string&, int, SaveMode);
+    void get_heat_region(cv::Mat & img, float threshold, int &pt_l, int &pt_t, int &pt_r, int & pt_b);
 private:
     int num_negative_;//How much negative samples we cropping from image
     int num_positive_;//Similar to above

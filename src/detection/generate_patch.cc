@@ -88,16 +88,48 @@ void GeneratePatch::create_negative_samples(cv::Mat &img, std::vector<cv::Rect> 
     int valid_num = 0;
     int height = img.rows;
     int width = img.cols;
-    //set the size boundary of bounding boxes
-    int min_size = 20;
-    int max_size = std::min(height/2, width/2);
     srand(time(NULL));
+    float low_bound = 500.0f;
+    //statistic the sum of rows and columns
+    int pt_l = 0;
+    int pt_r = img.rows;
+    int pt_t = 0;
+    int pt_b = img.cols;
+    get_heat_region(img, low_bound, pt_l, pt_t, pt_r, pt_b);
+    //rows l r height
+    //cols t b width
+
     while(valid_num < num_negative_) {
+        //set the size boundary of bounding boxes
+        int min_size = 20;
+        int max_size = std::min(height/2, width/2);
         //generate the size of patch randomly
         int patch_size = rand()%(max_size - min_size) + min_size;
         //randomly select the start point in image
         int x1 = rand()%(width - patch_size);
         int y1 = rand()%(height - patch_size);
+        //Here we generate the start point near the region of high light region
+        if(rand()%3 == 0) {
+            max_size = std::min((pt_r - pt_l + 1), (pt_b - pt_t + 1));
+            if(max_size - min_size > img_size) {
+                //generate the size of patch randomly
+                patch_size = rand()%(max_size - min_size) + min_size;
+                //Generate starting point
+                int rh = pt_r - pt_l + 1;
+                int rw = pt_b - pt_t + 1;
+                //randomly select the start point in image
+                int height_reduce = 0;
+                if(height - pt_r <= patch_size) {
+                    height_reduce = patch_size;
+                }
+                int width_reduce = 0;
+                if(width - pt_b <= patch_size) {
+                    width_reduce = patch_size;
+                }
+                x1 = rand() % (rw - width_reduce) + pt_t;
+                y1 = rand() % (rh - height_reduce) + pt_l;
+            }
+        }
         cv::Rect patch_bbx(x1, y1, patch_size, patch_size);
         int index = 0;
         float patch_iou = GEOMETRYTOOLS::regionsIOU(obj_bbxes, patch_bbx, index);
@@ -105,10 +137,6 @@ void GeneratePatch::create_negative_samples(cv::Mat &img, std::vector<cv::Rect> 
             char name_suffix[32];
             std::sprintf(name_suffix, "_%03d", valid_num);
             std::string img_name = file_prefix + std::string(name_suffix);
-//            cv::Mat img_patch = img(patch_bbx).clone();
-//            cv::resize(img_patch, img_patch, cv::Size(img_size, img_size), cv::INTER_AREA);
-//            cv::imwrite(img_name, img_patch);
-//            negative_fid_<<img_name<<" 0\n";
             write_to_disk(img, img_size, img_name, 0, true, patch_bbx, patch_bbx);
             valid_num++;
         }
@@ -582,4 +610,31 @@ void GeneratePatch::create_destination(const std::string &dst_path, int img_size
         hdf5_writer_->create_dataset(Mat2H5::LABEL, label_dimension, "float");
         save_mode_ = HDF5;
     }
+}
+
+
+void GeneratePatch::get_heat_region(cv::Mat & img, float low_bound, int &pt_l, int &pt_t, int &pt_r, int & pt_b) {
+    //statistic the sum of rows and columns
+    cv::Mat rows_sum(cv::Size(img.rows, 1), CV_32FC1);
+    cv::Mat column_sum(cv::Size(1, img.cols), CV_32FC1);
+    cv::Mat hist_img;
+    img.convertTo(hist_img, CV_32FC1);
+    cv::reduce(hist_img, rows_sum, 0, CV_REDUCE_SUM);
+    cv::reduce(hist_img, column_sum, 1, CV_REDUCE_SUM);
+    pt_l = 0;
+    pt_r = img.rows;
+    pt_t = 0;
+    pt_b = img.cols;
+    int start_pt = 0;
+    while(start_pt < img.rows - 1 && img.at<float>(start_pt, 0) < low_bound) start_pt++;
+    pt_l = start_pt;
+    start_pt = img.rows - 1;
+    while(start_pt > 0 && img.at<float>(start_pt, 0) < low_bound) start_pt--;
+    pt_r = start_pt;
+    start_pt = 0;
+    while(start_pt < img.cols - 1 && img.at<float>(0, start_pt) < low_bound) start_pt++;
+    pt_t = start_pt;
+    start_pt = img.cols - 1;
+    while(start_pt >0 && img.at<float>(0, start_pt) < low_bound) start_pt--;
+    pt_b = start_pt;
 }
