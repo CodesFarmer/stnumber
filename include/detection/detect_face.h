@@ -162,14 +162,14 @@ public:
 		std::vector<std::vector<Dtype> > all_boxes;
 //        double t = (double)cvGetTickCount();
 		all_boxes = propose_bboxes(img, 0.709, 0.7);
-////        t = (double)cvGetTickCount() - t;
-////        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
-//////        display_faces(img, all_boxes, "pnet", false);
-////        t = (double)cvGetTickCount();
-//		all_boxes = refine_bboxes(img, all_boxes, 0.6);
+//        t = (double)cvGetTickCount() - t;
+//        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
+////        display_faces(img, all_boxes, "pnet", false);
+//        t = (double)cvGetTickCount();
+		all_boxes = refine_bboxes(img, all_boxes, 0.6);
 //////        t = (double)cvGetTickCount() - t;
 //////        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
-////////        display_faces(img, all_boxes, "rnet", false);
+        display_faces(img, all_boxes, "rnet", false);
 //////        t = (double)cvGetTickCount();
 ////		all_boxes = output_bboxes(img, all_boxes, 0.6);
 //////        t = (double)cvGetTickCount() - t;
@@ -188,6 +188,9 @@ private:
 			cv::Mat tmp_img = img(facebbx).clone();
 			tmp_img.convertTo(tmp_img, img.depth());
 			cv::resize(tmp_img, img_n, img_n.size(), 0, 0, cv::INTER_AREA);
+#ifdef INPUT_L2NORM
+            if(width == height && width != 12) cv::normalize(img_n, img_n);
+#endif
             img_vec.push_back(img_n);
 		}
 		int num_patches = bboxes.size();
