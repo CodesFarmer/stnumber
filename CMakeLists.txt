@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 add_definitions(-DUSE_OPENCV)
 #add_definitions(-DUSE_DEPTH)
-add_definitions(-DINPUT_L2NORM)
+#add_definitions(-DINPUT_L2NORM)
 include(cmake/ConfigureOpenCV.cmake)
 include(cmake/ConfigureCaffe.cmake)
 include(cmake/ConfigureTinyxml2.cmake)

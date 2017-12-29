@@ -326,8 +326,9 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
         for(int bbx_id = 0; bbx_id < hand_bbx.size(); bbx_id ++) {
             int x_l = std::max( hand_bbx[bbx_id][0], 0.0f );
             int y_l = std::max( hand_bbx[bbx_id][1], 0.0f);
-            int x_r = std::min( hand_bbx[bbx_id][2], float(image.cols-1) );
-            int y_r = std::min( hand_bbx[bbx_id][3], float(image.rows-1) );
+            int x_r = std::min( std::max(hand_bbx[bbx_id][2], 0.0f), float(image.cols-1) );
+            int y_r = std::min( std::max(hand_bbx[bbx_id][3], 0.0f), float(image.rows-1) );
+            if(x_l > y_l || x_r > y_r) continue;
             cv::Rect hand_rect(x_l, y_l, x_r - x_l + 1, y_r - y_l + 1);
 //            cv::rectangle(image, hand_rect, cv::Scalar(255));
 //            cv::imshow("test", image);
@@ -389,6 +390,10 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
  */
 void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std::string & name_prefix, int label,
                                   const bool augmentation, const cv::Rect &rect_sample, const cv::Rect &rect_ground) {
+    if(rect_sample.width <=0 | rect_sample.height<= 0) return;
+    if(rect_ground.width <=0 | rect_ground.height<= 0) return;
+    if(rect_sample.x <0 | rect_sample.y< 0) return;
+    if(rect_ground.x <0 | rect_ground.y< 0) return;
     float bias = 1e-30;
     //Write the original image
     int xs_l = rect_sample.x;
