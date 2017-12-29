@@ -36,6 +36,7 @@ public:
                          int img_size,
                          std::string dst_path, SaveMode);//Similar to above
     void generate_patches_cnn(std::string, int, std::string, SaveMode);
+    void generate_patches_text(std::string, int, std::string, SaveMode);
     void initialize_detector(const std::map<std::string, std::pair<std::string, std::string> > &, const float, const std::vector<float>);
 //    void merge_image(const cv::Mat&, const cv::Mat&, cv::Mat &);
     void merge_image(cv::Mat&, cv::Mat&, cv::Mat &);

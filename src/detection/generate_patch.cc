@@ -520,7 +520,13 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
 //}
 
 void GeneratePatch::save2hdf5(const cv::Mat &image, const std::vector<float> label) {
-    hdf5_writer_->write_tuples(image, label);
+    cv::Mat tempimage = image.clone();
+    image.convertTo(tempimage, CV_32FC1);
+    cv::Mat normalized_img = tempimage.clone();
+#ifdef INPUT_L2NORM
+    cv::normalize(tempimage, normalized_img);
+#endif
+    hdf5_writer_->write_tuples(normalized_img, label);
 }
 
 void GeneratePatch::save2disk(const cv::Mat &image, const std::vector<float> labels, const std::string &img_name) {
@@ -604,6 +610,11 @@ void GeneratePatch::create_destination(const std::string &dst_path, int img_size
         mean_value.push_back(0.0f);
         shrink_ratio.push_back(0.0125f);
         shrink_ratio.push_back(0.00083f);
+#ifdef INPUT_L2NORM
+        shrink_ratio[0] = 1.0f;
+        shrink_ratio[1] = 1.0f;
+        std::printf("Input image are l2 normalized...\n");
+#endif
         hdf5_writer_ = boost::make_shared<Mat2H5>(mean_value, shrink_ratio, 1000);
         hdf5_writer_->create_hdf5(dst_path);
         hdf5_writer_->create_dataset(Mat2H5::DATA, data_dimension, "float");
@@ -637,4 +648,88 @@ void GeneratePatch::get_heat_region(cv::Mat & img, float low_bound, int &pt_l, i
     start_pt = img.cols - 1;
     while(start_pt >0 && img.at<float>(0, start_pt) < low_bound) start_pt--;
     pt_b = start_pt;
+}
+
+/*
+ * The function generate samples from images with ground truth and bounding boxes stored in text
+ * In text, there are 5 component of a line
+ * image_path x1 y1 x2 y2
+ * The path of xml file can be obtained by replace the word 'png|jpg|cam0' in image_path with xml
+ * */
+void GeneratePatch::generate_patches_text(std::string filename, int img_size, std::string dst_path, SaveMode save_mode) {
+    int length = FILEPARTS::counting_lines(filename);
+    std::ifstream input_fid;
+    input_fid.open(filename.c_str(), std::ios::in);
+
+    create_destination(dst_path, img_size, save_mode);
+    std::string img_name;
+    std::string img_path;
+    float x1 = 0.0f;
+    float y1 = 0.0f;
+    float x2 = 0.0f;
+    float y2 = 0.0f;
+    std::vector<cv::Rect> bounding_boxes;
+    int cur_iter = 0;
+    while(!input_fid.eof()) {
+        input_fid>>img_path;
+        input_fid>>x1;
+        input_fid>>y1;
+        input_fid>>x2;
+        input_fid>>y2;
+        std::string xml_path;
+        xml_path = img_path;
+        FILEPARTS::replace_string(xml_path, "cam0", "xml");
+        FILEPARTS::replace_string(xml_path, "png", "xml");
+        FILEPARTS::replace_string(xml_path, "jpg", "xml");
+        bounding_boxes = get_bounding_boxes(xml_path);
+        cv::Mat image = cv::imread(img_path, CV_8UC1);
+        x1 = std::max(x1, 0.0f);
+        y1 = std::max(y1, 0.0f);
+        x2 = std::min(x2, image.cols-1.0f);
+        y2 = std::min(y2, image.rows-1.0f);
+        cv::Rect hand_rect(x1, y1, x2 - x1, y2 - y1);
+        cv::Mat image_rgb;
+        cv::cvtColor(image, image_rgb, cv::COLOR_GRAY2BGR);
+        cv::rectangle(image_rgb, hand_rect, cv::Scalar(0, 0, 255));
+        cv::rectangle(image_rgb, bounding_boxes[0], cv::Scalar(0, 255, 0));
+        cv::imshow("bbx", image_rgb);
+        cv::waitKey(1);
+
+        std::string file_path;
+        std::string file_name;
+        std::string file_ext;
+        FILEPARTS::fileparts(img_path, file_path, file_name, file_ext);
+        std::string negative_path = dst_path + "/negative/" + file_name;
+        std::string positive_path_posi = dst_path + "/positive/" + file_name;
+        std::string positive_path_part = dst_path + "/part/" + file_name;
+        int index;
+        float patch_iou = GEOMETRYTOOLS::regionsIOU(bounding_boxes, hand_rect, index);
+
+        //if iou is under neg_IOU_, then this is a negative sample
+        if(patch_iou < neg_IOU_) {
+            char name_suffix[32];
+            std::sprintf(name_suffix, "_%03d", 0);
+            std::string img_name = negative_path + std::string(name_suffix);
+            write_to_disk(image, img_size, img_name, 0, true, hand_rect, hand_rect);
+        }
+        else if(patch_iou >= part_IOU_) {
+            //if it is a positive sample
+            if(patch_iou >= pos_IOU_) {
+                char name_suffix[32];
+                std::sprintf(name_suffix, "_%03d", 0);
+                std::string img_name = positive_path_posi + std::string(name_suffix);
+                write_to_disk(image, img_size, img_name, 1, true, hand_rect, bounding_boxes[index]);
+            }//if it is a part appearance sample
+            else if(patch_iou >= part_IOU_) {
+                char name_suffix[32];
+                std::sprintf(name_suffix, "_%03d", 0);
+                std::string img_name = positive_path_part + std::string(name_suffix);
+                write_to_disk(image, img_size, img_name, 1, true, hand_rect, bounding_boxes[index]);
+            }
+        }
+
+        std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
+                  << std::flush;
+        cur_iter++;
+    }
 }
