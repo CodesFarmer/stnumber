@@ -674,13 +674,16 @@ void GeneratePatch::generate_patches_text(std::string filename, int img_size, st
     float x2 = 0.0f;
     float y2 = 0.0f;
     std::vector<cv::Rect> bounding_boxes;
+    DetectTools* dt_tools = new DetectTools();
+    std::vector<std::vector<float> > bbxes_points;
+    bbxes_points.push_back(std::vector<float>(6, 0.0f));
     int cur_iter = 0;
     while(!input_fid.eof()) {
         input_fid>>img_path;
-        input_fid>>x1;
-        input_fid>>y1;
-        input_fid>>x2;
-        input_fid>>y2;
+        input_fid>>bbxes_points[0][0];
+        input_fid>>bbxes_points[0][1];
+        input_fid>>bbxes_points[0][2];
+        input_fid>>bbxes_points[0][3];
         std::string xml_path;
         xml_path = img_path;
         FILEPARTS::replace_string(xml_path, "cam0", "xml");
@@ -688,6 +691,13 @@ void GeneratePatch::generate_patches_text(std::string filename, int img_size, st
         FILEPARTS::replace_string(xml_path, "jpg", "xml");
         bounding_boxes = get_bounding_boxes(xml_path);
         cv::Mat image = cv::imread(img_path, CV_8UC1);
+        //We should pad the patches into square region、
+        dt_tools->turn2rect(bbxes_points);
+        std::vector<std::vector<float> > img_patches = dt_tools->bboxes2patches(bbxes_points, image.rows, image.cols);
+        x1 = bbxes_points[0][0];
+        y1 = bbxes_points[0][1];
+        x2 = bbxes_points[0][2];
+        y2 = bbxes_points[0][3];
         x1 = std::max(x1, 0.0f);
         y1 = std::max(y1, 0.0f);
         x2 = std::min(std::max(0.0f, x2), image.cols-1.0f);
