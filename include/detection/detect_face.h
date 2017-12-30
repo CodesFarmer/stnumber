@@ -164,18 +164,18 @@ public:
 		all_boxes = propose_bboxes(img, 0.709, 0.7);
 //        t = (double)cvGetTickCount() - t;
 //        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
-////        display_faces(img, all_boxes, "pnet", false);
+//        display_faces(img, all_boxes, "pnet", false);
 //        t = (double)cvGetTickCount();
 		all_boxes = refine_bboxes(img, all_boxes, 0.6);
-////        t = (double)cvGetTickCount() - t;
-////        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
-//        display_faces(img, all_boxes, "rnet", false);
-////        t = (double)cvGetTickCount();
-//		all_boxes = output_bboxes(img, all_boxes, 0.6);
-////        t = (double)cvGetTickCount() - t;
-////        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
-//////        display_faces(img, all_boxes, "onet", true);
-////////	  	// return alignment_faces(image, all_boxes);
+//////        t = (double)cvGetTickCount() - t;
+//////        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
+////        display_faces(img, all_boxes, "rnet", false);
+//////        t = (double)cvGetTickCount();
+////		all_boxes = output_bboxes(img, all_boxes, 0.6);
+//////        t = (double)cvGetTickCount() - t;
+//////        printf( "run time = %gms\n", t/(cvGetTickFrequency()*1000));
+////////        display_faces(img, all_boxes, "onet", true);
+//////////	  	// return alignment_faces(image, all_boxes);
 		return all_boxes;
 	}
 private:

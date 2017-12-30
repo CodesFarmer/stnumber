@@ -328,7 +328,7 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
             int y_l = std::max( hand_bbx[bbx_id][1], 0.0f);
             int x_r = std::min( std::max(hand_bbx[bbx_id][2], 0.0f), float(image.cols-1) );
             int y_r = std::min( std::max(hand_bbx[bbx_id][3], 0.0f), float(image.rows-1) );
-            if(x_l > y_l || x_r > y_r) continue;
+            if(x_l > x_r || y_l > y_r) continue;
             cv::Rect hand_rect(x_l, y_l, x_r - x_l + 1, y_r - y_l + 1);
 //            cv::rectangle(image, hand_rect, cv::Scalar(255));
 //            cv::imshow("test", image);
@@ -392,8 +392,8 @@ void GeneratePatch::write_to_disk(const cv::Mat & image, int img_size, const std
                                   const bool augmentation, const cv::Rect &rect_sample, const cv::Rect &rect_ground) {
     if(rect_sample.width <=0 | rect_sample.height<= 0) return;
     if(rect_ground.width <=0 | rect_ground.height<= 0) return;
-    if(rect_sample.x <0 | rect_sample.y< 0) return;
-    if(rect_ground.x <0 | rect_ground.y< 0) return;
+//    if(rect_sample.x <0 | rect_sample.y< 0) return;
+//    if(rect_ground.x <0 | rect_ground.y< 0) return;
     float bias = 1e-30;
     //Write the original image
     int xs_l = rect_sample.x;
@@ -690,15 +690,15 @@ void GeneratePatch::generate_patches_text(std::string filename, int img_size, st
         cv::Mat image = cv::imread(img_path, CV_8UC1);
         x1 = std::max(x1, 0.0f);
         y1 = std::max(y1, 0.0f);
-        x2 = std::min(x2, image.cols-1.0f);
-        y2 = std::min(y2, image.rows-1.0f);
+        x2 = std::min(std::max(0.0f, x2), image.cols-1.0f);
+        y2 = std::min(std::max(0.0f, y2), image.rows-1.0f);
         cv::Rect hand_rect(x1, y1, x2 - x1, y2 - y1);
-        cv::Mat image_rgb;
-        cv::cvtColor(image, image_rgb, cv::COLOR_GRAY2BGR);
-        cv::rectangle(image_rgb, hand_rect, cv::Scalar(0, 0, 255));
-        cv::rectangle(image_rgb, bounding_boxes[0], cv::Scalar(0, 255, 0));
-        cv::imshow("bbx", image_rgb);
-        cv::waitKey(1);
+//        cv::Mat image_rgb;
+//        cv::cvtColor(image, image_rgb, cv::COLOR_GRAY2BGR);
+//        cv::rectangle(image_rgb, hand_rect, cv::Scalar(0, 0, 255));
+//        cv::rectangle(image_rgb, bounding_boxes[0], cv::Scalar(0, 255, 0));
+//        cv::imshow("bbx", image_rgb);
+//        cv::waitKey(0);
 
         std::string file_path;
         std::string file_name;
