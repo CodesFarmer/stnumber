@@ -355,7 +355,7 @@ void GeneratePatch::generate_patches_cnn(std::string filename, int img_size, std
                     char name_suffix[32];
                     std::sprintf(name_suffix, "_%03d", bbx_id);
                     std::string img_name = positive_path_part + std::string(name_suffix);
-                    write_to_disk(image, img_size, img_name, 1, true, hand_rect, bounding_boxes[index]);
+                    write_to_disk(image, img_size, img_name, -1, true, hand_rect, bounding_boxes[index]);
                 }
             }
         }
@@ -739,7 +739,7 @@ void GeneratePatch::generate_patches_text(std::string filename, int img_size, st
                 char name_suffix[32];
                 std::sprintf(name_suffix, "_%03d", 0);
                 std::string img_name = positive_path_part + std::string(name_suffix);
-                write_to_disk(image, img_size, img_name, 1, true, hand_rect, bounding_boxes[index]);
+                write_to_disk(image, img_size, img_name, -1, true, hand_rect, bounding_boxes[index]);
             }
         }
 
