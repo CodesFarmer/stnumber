@@ -693,11 +693,11 @@ void GeneratePatch::generate_patches_text(std::string filename, int img_size, st
         cv::Mat image = cv::imread(img_path, CV_8UC1);
         //We should pad the patches into square region、
         dt_tools->turn2rect(bbxes_points);
-        std::vector<std::vector<float> > img_patches = dt_tools->bboxes2patches(bbxes_points, image.rows, image.cols);
-        x1 = bbxes_points[0][0];
-        y1 = bbxes_points[0][1];
-        x2 = bbxes_points[0][2];
-        y2 = bbxes_points[0][3];
+        std::vector<std::vector<float> > img_patches = dt_tools->bboxes2patches(bbxes_points, image.cols, image.rows);
+        x1 = img_patches[0][4];
+        y1 = img_patches[0][5];
+        x2 = img_patches[0][6];
+        y2 = img_patches[0][7];
         x1 = std::max(x1, 0.0f);
         y1 = std::max(y1, 0.0f);
         x2 = std::min(std::max(0.0f, x2), image.cols-1.0f);
@@ -746,5 +746,14 @@ void GeneratePatch::generate_patches_text(std::string filename, int img_size, st
         std::cout << "\r" << std::setprecision(4) << 100 * float(cur_iter) / float(length) << "% completed..."
                   << std::flush;
         cur_iter++;
+    }
+    std::cout<<std::endl;
+    if(save_mode_ == DISK) {
+        negative_fid_.close();
+        positive_fid_.close();
+        part_fid_.close();
+    }
+    else if(save_mode_ == HDF5) {
+        hdf5_writer_->close_hdf5();
     }
 }
